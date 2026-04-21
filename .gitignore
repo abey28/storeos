@@ -1,0 +1,11 @@
+# Claude Code 本機設定
+.claude/
+
+# 系統產生的暫存檔
+.DS_Store
+Thumbs.db
+
+# 開發工具
+node_modules/
+.wrangler/
+.dev.vars

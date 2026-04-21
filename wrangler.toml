@@ -1,0 +1,7 @@
+name = "storeos"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+[[kv_namespaces]]
+binding = "STOREOS_KV"
+id = "802a223deab8414c987199c50301306c"
