@@ -228,7 +228,7 @@ tr:last-child td{border-bottom:none;}
     <div class="topbar-title" id="topbar-title">總覽儀表板</div>
     <div class="topbar-right"><span id="user-badge">—</span>
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">🌙 暗色模式</button>
-      <span class="ver-badge" id="ver-badge">v2.5.0</span>
+      <span class="ver-badge" id="ver-badge">v2.6.0</span>
       <span class="today-badge" id="today-badge"></span>
     </div>
   </div>
@@ -326,6 +326,7 @@ tr:last-child td{border-bottom:none;}
         <div id="proj-inputs-wrap" style="margin-bottom:16px"></div>
         <div id="deduct-inputs-wrap" style="margin-bottom:16px"></div>
         <div id="allowance-inputs-wrap" style="margin-bottom:16px"></div>
+        <div id="intern-bonus-wrap" style="margin-bottom:16px"></div>
         <div class="form-group" style="margin-bottom:18px">
           <label class="form-label">備註</label><input type="text" id="rec-note" placeholder="促銷活動、節日說明…">
         </div>
@@ -431,7 +432,13 @@ tr:last-child td{border-bottom:none;}
         <div class="form-row">
           <div class="form-group"><label class="form-label">職稱</label><input type="text" id="sf-title" placeholder="例：店長、副店長、門市專員"></div>
           <div class="form-group"><label class="form-label">職稱加給津貼（元／月）</label><input type="number" id="sf-title-allowance" placeholder="0" min="0" value="0"></div>
-          <div class="form-group"></div>
+          <div class="form-group">
+            <label class="form-label">身分類型</label>
+            <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);font-size:13px;color:var(--text-dim);transition:all .2s;">
+              <input type="checkbox" id="sf-intern" style="width:auto;padding:0;background:transparent;border:none;">
+              <span>🎓 實習生（不參與業績獎金分配）</span>
+            </label>
+          </div>
         </div>
         <div class="divider"></div>
         <div style="font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:12px;">勞健保 &amp; 退休金設定</div>
@@ -483,7 +490,7 @@ tr:last-child td{border-bottom:none;}
       <div class="card">
         <div class="card-title">⚙️ 業績獎金 — 階梯規則</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.8;">
-          自由設定任意門檻與對應獎金，系統取「最高符合門檻」套用，多人平分。<br>
+          自由設定任意門檻與對應獎金，系統取「最高符合門檻」套用，多人同班時依工時比例分配。<br>
           <span style="color:var(--gold-dim)">範例：$5,000→$200 ／ $10,000→$500 ／ $14,000→$700 → 業績$12,000 領$500</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 40px;gap:8px;padding:0 2px;margin-bottom:8px;">
@@ -596,12 +603,13 @@ tr:last-child td{border-bottom:none;}
           <div class="help-h4">② 營業額登記</div>
           <ul class="help-ul">
             <li class="help-li">選擇日期、門市，輸入當日營業額</li>
-            <li class="help-li">勾選當天上班員工（支援一人或兩人同班）</li>
+            <li class="help-li">勾選當天上班員工（支援多人同班）</li>
             <li class="help-li">若有啟用中的彈性專案，系統自動顯示次數輸入欄</li>
             <li class="help-li">下方即時預覽顯示業績獎金、專案獎金及每人應得金額</li>
             <li class="help-li">同一門市同日重複登記時，系統會提示是否覆蓋</li>
           </ul>
-          <div class="help-tip">💡 兩人同班時，業績獎金由當班員工平均分配；專案獎金依各員工個人完成次數分別計算</div>
+          <div class="help-tip">💡 多人同班時，業績獎金依各員工當日工時比例分配；專案獎金依各員工個人完成次數分別計算</div>
+          <div class="help-tip">🎓 若員工設為「實習生」，預設不參與業績獎金分配。登記當天如需給予實習生獎金，可在記帳頁面手動輸入金額（⚡例外覆蓋），該金額先從獎金池扣除，剩餘部分再由正職員工依工時比例分配</div>
 
           <div class="help-h4">③ 歷史紀錄</div>
           <ul class="help-ul">
@@ -674,6 +682,19 @@ tr:last-child td{border-bottom:none;}
     <div class="page" id="page-changelog">
       <div class="card">
         <div class="card-title">🗒️ 版本修訂記錄</div>
+
+        <div class="cl-item">
+          <div class="cl-header">
+            <span class="cl-ver">v2.6.0</span>
+            <span class="cl-tag">功能更新</span>
+          </div>
+          <ul class="cl-list">
+            <li>新增實習生（🎓 isIntern）功能：員工資料可標記為實習生，實習生預設不參與業績獎金分配</li>
+            <li>實習生例外覆蓋：登記當天可在記帳頁手動輸入實習生獎金金額，系統先從獎金池扣除該金額，剩餘部分再由正職員工依工時比例分配；含手動覆蓋的紀錄顯示 ⚡例外 badge</li>
+            <li>獎金分配邏輯統一：薪資試算、列印、薪資單、全員薪資總表全部改用新的 distributeBonusForRecord() 函式，實習生覆蓋邏輯一致</li>
+            <li>修正說明頁文字：「平均分配」更正為「依工時比例分配」、「兩人同班」更正為「多人同班」；新增實習生功能說明</li>
+          </ul>
+        </div>
 
         <div class="cl-item">
           <div class="cl-header">
@@ -1319,12 +1340,10 @@ function renderDashboard(){
   const staffAgg={};
   cur.records.forEach(r=>{
     const hc=r.staff.length||1;
-    const totalHoursR=r.wageData?r.staff.reduce((s,n)=>s+(r.wageData[n]?r.wageData[n].hours||0:0),0):0;
+    const bonusDist=distributeBonusForRecord(r,staff);
     r.staff.forEach(name=>{
       if(!staffAgg[name])staffAgg[name]={wage:0,sb:0,pb:0,deduct:0,days:0};
-      const myHours=r.wageData&&r.wageData[name]?r.wageData[name].hours||0:0;
-      const sbRatio=totalHoursR>0?myHours/totalHoursR:1/hc;
-      staffAgg[name].sb+=(r.totalBonus||0)*sbRatio;
+      staffAgg[name].sb+=bonusDist[name]||0;
       staffAgg[name].days+=1;
       if(r.projPerStaff&&r.projPerStaff[name])staffAgg[name].pb+=r.projPerStaff[name].reduce((s,e)=>s+e.amt*e.count,0);
       else staffAgg[name].pb+=(r.totalProjBonus||0)/hc;
@@ -1370,9 +1389,10 @@ function initRecord(){
   renderProjInputs();
   renderDeductInputs();
   renderAllowanceInputs();
+  renderInternBonusInputs();
   updateBonusPreview();
 }
-function onDateChange(){autoCheckWeekend();renderWageInputs();renderProjInputs();renderDeductInputs();renderAllowanceInputs();updateBonusPreview();}
+function onDateChange(){autoCheckWeekend();renderWageInputs();renderProjInputs();renderDeductInputs();renderAllowanceInputs();renderInternBonusInputs();updateBonusPreview();}
 function onDoublePayChange(){renderWageInputs();updateBonusPreview();}
 function toggleTheme(){
   const isLight=document.body.classList.toggle('light-mode');
@@ -1389,7 +1409,7 @@ function autoCheckWeekend(){
   }
 }
 function renderStaffPicker(){
-  document.getElementById('staff-picker').innerHTML=staff.map(s=>'<label class="staff-chip"><input type="checkbox" value="'+s.id+'" onchange="onStaffPickerChange()"><span>'+s.name+'</span></label>').join('');
+  document.getElementById('staff-picker').innerHTML=staff.map(s=>'<label class="staff-chip"><input type="checkbox" value="'+s.id+'" onchange="onStaffPickerChange()"><span>'+s.name+(s.isIntern?'<span style="font-size:9px;color:#95a5a6;margin-left:4px;">🎓</span>':'')+'</span></label>').join('');
 }
 function renderProjInputs(){
   const month=(document.getElementById('rec-date').value||isoToday()).slice(0,7);
@@ -1411,7 +1431,7 @@ function renderProjInputs(){
 }
 function getCheckedStaff(){return[...document.querySelectorAll('#staff-picker input:checked')].map(i=>{const s=staff.find(x=>x.id===i.value);return s?s.name:i.value;});}
 function getCheckedStaffIds(){return[...document.querySelectorAll('#staff-picker input:checked')].map(i=>i.value);}
-function onStaffPickerChange(){renderWageInputs();renderProjInputs();renderDeductInputs();renderAllowanceInputs();updateBonusPreview();}
+function onStaffPickerChange(){renderWageInputs();renderProjInputs();renderDeductInputs();renderAllowanceInputs();renderInternBonusInputs();updateBonusPreview();}
 function renderWageInputs(){
   const wrap=document.getElementById('wage-inputs-wrap');
   const checked=getCheckedStaff();
@@ -1521,6 +1541,37 @@ function getAllowanceData(){
   });
   return result;
 }
+function renderInternBonusInputs(){
+  const wrap=document.getElementById('intern-bonus-wrap');
+  if(!wrap)return;
+  const checked=getCheckedStaff();
+  const interns=checked.filter(name=>{const s=staff.find(x=>x.name===name);return s&&s.isIntern;});
+  if(!interns.length){wrap.innerHTML='';return;}
+  let html='<div style="font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px;">🎓 實習生業績獎金例外調整（選填）</div>';
+  html+='<div style="font-size:10px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">填入後，系統將先從獎金池中扣除此金額給實習生，正職員工再按工時比例分配剩餘獎金池。</div>';
+  html+='<div style="overflow-x:auto;"><table style="font-size:12px;border-collapse:collapse;"><thead><tr>';
+  html+='<th style="padding:6px 10px;text-align:left;color:var(--gold);font-size:10px;letter-spacing:1px;">員工</th>';
+  html+='<th style="padding:6px 10px;text-align:center;color:var(--text-dim);font-size:11px;">例外獎金（元，留空為 0）</th>';
+  html+='</tr></thead><tbody>';
+  interns.forEach(name=>{
+    const sid=staff.find(s=>s.name===name)?.id||name;
+    html+='<tr>';
+    html+='<td style="padding:6px 10px;color:#95a5a6;">🎓 '+name+'</td>';
+    html+='<td style="padding:6px 10px;text-align:center;"><input type="number" id="intern-bonus-'+sid+'" min="0" value="0" oninput="updateBonusPreview()" style="width:100px;text-align:center;border-color:#7f8c8d;"> <span style="font-size:9px;background:rgba(230,126,34,.15);color:#e67e22;border:1px solid rgba(230,126,34,.3);border-radius:8px;padding:1px 5px;margin-left:4px;">⚡例外</span></td>';
+    html+='</tr>';
+  });
+  wrap.innerHTML=html+'</tbody></table></div>';
+}
+function getInternOverrideData(){
+  const checkedIds=getCheckedStaffIds(),result={};
+  checkedIds.forEach(sid=>{
+    const sObj=staff.find(s=>s.id===sid);
+    if(!sObj||!sObj.isIntern)return;
+    const amt=Number(document.getElementById('intern-bonus-'+sid)?.value||0);
+    if(amt>0)result[sObj.name]=amt;
+  });
+  return result;
+}
 function getWageData(){
   const checkedIds=getCheckedStaffIds(),result={};
   const isDouble=document.getElementById('rec-double-pay')?.checked||false;
@@ -1559,6 +1610,40 @@ function getTotalProjBonus(){
 function getPerStaffProjBonus(){
   const pe=getCurrentProjEntries(),result={};
   Object.entries(pe).forEach(([name,entries])=>{result[name]=entries.reduce((s,e)=>s+e.amt*e.count,0);});
+  return result;
+}
+/* ── 實習生感知業績獎金分配 ──
+ * 邏輯：獎金池先扣實習生例外金額，剩餘由正職依工時比例分配。
+ * staffArr 傳入當前 staff 陣列以判斷 isIntern。
+ */
+function distributeBonusForRecord(r,staffArr){
+  const pool=r.totalBonus||0;
+  const overrides=r.bonusOverride||{};
+  // 計算實習生例外金額總和（只計入實際被標記為實習生者）
+  let internTotal=0;
+  (r.staff||[]).forEach(name=>{
+    const s=staffArr.find(x=>x.name===name);
+    if(s&&s.isIntern&&overrides[name]>0)internTotal+=Number(overrides[name])||0;
+  });
+  const remaining=Math.max(0,pool-internTotal);
+  // 正職員工工時總和
+  const regularHours=(r.staff||[]).reduce((sum,name)=>{
+    const s=staffArr.find(x=>x.name===name);
+    if(s&&s.isIntern)return sum;
+    return sum+((r.wageData&&r.wageData[name])?r.wageData[name].hours||0:0);
+  },0);
+  const regularCount=(r.staff||[]).filter(name=>{const s=staffArr.find(x=>x.name===name);return!(s&&s.isIntern);}).length;
+  const result={};
+  (r.staff||[]).forEach(name=>{
+    const s=staffArr.find(x=>x.name===name);
+    if(s&&s.isIntern){
+      result[name]=Number(overrides[name])||0;
+    } else {
+      const myH=(r.wageData&&r.wageData[name])?r.wageData[name].hours||0:0;
+      const ratio=regularHours>0?myH/regularHours:(regularCount>0?1/regularCount:0);
+      result[name]=Math.round(remaining*ratio);
+    }
+  });
   return result;
 }
 function updateBonusPreview(){
@@ -1602,22 +1687,38 @@ function updateBonusPreview(){
   html+='</div>';
   if(checked.length){
     html+='<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;">';
-    const totalHoursLive=checked.reduce((s,n)=>s+(wd[n]?wd[n].hours||0:0),0);
+    const internOD=getInternOverrideData();
+    const internOverrideTotal=checked.reduce((s,n)=>{const sObj=staff.find(x=>x.name===n);return(sObj&&sObj.isIntern&&internOD[n]>0)?s+(Number(internOD[n])||0):s;},0);
+    const remainingPool=Math.max(0,sb-internOverrideTotal);
+    const regularHoursLive=checked.reduce((s,n)=>{const sObj=staff.find(x=>x.name===n);if(sObj&&sObj.isIntern)return s;return s+(wd[n]?wd[n].hours||0:0);},0);
+    const regularCount=checked.filter(n=>{const sObj=staff.find(x=>x.name===n);return!(sObj&&sObj.isIntern);}).length;
     checked.forEach(name=>{
+      const sObj=staff.find(x=>x.name===name);
+      const isInternFlag=!!(sObj&&sObj.isIntern);
       const staffWage=(wd[name]&&wd[name].wage)||0;
       const staffPB=perStaffPB[name]||0;
       const staffDeduct=(dd[name]&&dd[name].amt)||0;
       const staffAllow=(ad[name]&&ad[name].amt)||0;
       const myHours=(wd[name]&&wd[name].hours)||0;
-      const staffSB=totalHoursLive>0?Math.round(sb*(myHours/totalHoursLive)):Math.round(sb/hc);
+      let staffSB;
+      if(isInternFlag){
+        staffSB=Number(internOD[name])||0;
+      } else {
+        staffSB=regularHoursLive>0?Math.round(remainingPool*(myHours/regularHoursLive)):(regularCount>0?Math.round(remainingPool/regularCount):0);
+      }
       const total=staffWage+staffSB+staffPB+staffAllow-staffDeduct;
       let detail='本薪$'+fmt(staffWage)+' + 業績$'+fmt(staffSB);
+      if(isInternFlag&&staffSB>0)detail+=' ⚡例外';
+      else if(isInternFlag)detail+=' (實習生不分配)';
       if(staffPB)detail+=' + 專案$'+fmt(staffPB);
       if(staffAllow)detail+=' + 加項$'+fmt(staffAllow);
       if(staffDeduct)detail+=' - 扣款$'+fmt(staffDeduct);
-      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div class="avatar" style="width:26px;height:26px;font-size:11px;">'+name[0]+'</div>';
-      html+='<span style="font-size:13px;">'+name+'</span>';
-      html+='<span style="font-family:DM Mono;color:#f0b27a;font-weight:700;margin-left:auto;font-size:16px;">$'+fmt(total)+'</span>';
+      const avatarBg=isInternFlag?'background:#7f8c8d;':'';
+      const internBadge=isInternFlag?'<span style="font-size:9px;color:#95a5a6;margin-left:4px;">🎓</span>':'';
+      const exceptionBadge=isInternFlag&&staffSB>0?'<span style="font-size:9px;background:rgba(230,126,34,.15);color:#e67e22;border:1px solid rgba(230,126,34,.3);border-radius:8px;padding:1px 5px;margin-left:4px;">⚡例外</span>':'';
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div class="avatar" style="width:26px;height:26px;font-size:11px;'+avatarBg+'">'+name[0]+'</div>';
+      html+='<span style="font-size:13px;">'+name+internBadge+'</span>';
+      html+='<span style="font-family:DM Mono;color:#f0b27a;font-weight:700;margin-left:auto;font-size:16px;">$'+fmt(total)+'</span>'+exceptionBadge;
       html+='<span style="color:var(--text-muted);font-size:10px;margin-left:4px;">('+detail+')</span></div>';
     });
     html+='</div>';
@@ -1627,6 +1728,7 @@ function updateBonusPreview(){
 function saveRecord(){
   const date=document.getElementById('rec-date').value,store=document.getElementById('rec-store').value,sales=Number(document.getElementById('rec-sales').value),note=document.getElementById('rec-note').value,staffList=getCheckedStaff(),pe=getCurrentProjEntries(),wd=getWageData(),dd=getDeductData(),ad=getAllowanceData();
   const doublePay=document.getElementById('rec-double-pay')?.checked||false;
+  const internBO=getInternOverrideData();
   if(!date||!store||!sales){showToast('⚠ 請填寫日期、門市與營業額');return;}
   if(!staffList.length){showToast('⚠ 請至少選擇一位上班員工');return;}
   const dup=records.find(r=>r.date===date&&r.store===store);
@@ -1637,9 +1739,10 @@ function saveRecord(){
   const totalWage=Object.values(wd).reduce((s,w)=>s+w.wage,0);
   const totalDeduct=Object.values(dd).reduce((s,d)=>s+(d.amt||0),0);
   const totalAllow=Object.values(ad).reduce((s,a)=>s+(a.amt||0),0);
-  records.push({date,store,sales,staff:staffList,totalBonus:calcTierBonus(sales),totalProjBonus:totalPB,projEntries:flatEntries,projPerStaff:pe,wageData:wd,totalWage,deductData:dd,totalDeduct,allowanceData:ad,totalAllow,doublePay,note,ts:Date.now()});
+  const bonusOverride=Object.keys(internBO).length?internBO:undefined;
+  records.push({date,store,sales,staff:staffList,totalBonus:calcTierBonus(sales),totalProjBonus:totalPB,projEntries:flatEntries,projPerStaff:pe,wageData:wd,totalWage,deductData:dd,totalDeduct,allowanceData:ad,totalAllow,bonusOverride,doublePay,note,ts:Date.now()});
   saveRecordsKey();
-  logAction(dup?'編輯營業額紀錄':'新增營業額紀錄',date+' '+store+' 營業額$'+fmt(sales)+' 員工:'+staffList.join('、')+(doublePay?' (雙倍薪資)':''));
+  logAction(dup?'編輯營業額紀錄':'新增營業額紀錄',date+' '+store+' 營業額$'+fmt(sales)+' 員工:'+staffList.join('、')+(doublePay?' (雙倍薪資)':'')+(bonusOverride&&Object.keys(bonusOverride).length?' [實習生例外:'+Object.entries(bonusOverride).map(([n,v])=>n+'$'+v).join(',')+']':''));
   saveAll();showToast('✅ '+store+' '+date+' 已儲存'+(doublePay?' 🎉 雙倍薪資':''));
   document.getElementById('rec-sales').value='';document.getElementById('rec-note').value='';
   document.getElementById('rec-double-pay').checked=false;
@@ -1666,7 +1769,7 @@ function renderHistory(){
     const allowSum=r.totalAllow||0;
     const allowDetail=r.allowanceData?Object.entries(r.allowanceData).filter(([,a])=>a.amt>0).map(([n,a])=>n+':+$'+fmt(a.amt)+(a.reason?' ('+a.reason+')':'')).join('、'):'';
     const allowCell=allowSum>0?'<span style="font-family:DM Mono;color:#f0b27a">+$'+fmt(allowSum)+'</span>'+(allowDetail?'<span style="font-size:9px;color:var(--text-muted);display:block;">'+allowDetail+'</span>':''):'<span style="color:var(--text-muted)">—</span>';
-    return '<tr data-ts="'+r.ts+'"><td><span style="font-family:DM Mono;font-size:12px">'+r.date+'</span></td><td><span class="dot" style="background:'+sc(r.store)+'"></span>'+r.store+'</td><td><div class="tag-list">'+r.staff.map(s=>'<span class="tag">'+s+'</span>').join('')+'</div></td><td style="font-family:DM Mono;color:var(--gold-light)">$'+fmt(r.sales)+'</td><td style="font-family:DM Mono;color:var(--text-dim)">$'+fmt(wageSum)+doublebadge+(wageDetail?'<span style="font-size:9px;color:var(--text-muted);display:block;">'+wageDetail+'</span>':'')+'</td><td style="font-family:DM Mono;color:#82e0aa">$'+fmt(r.totalBonus||0)+'</td><td style="font-family:DM Mono;color:#bb8fce">$'+fmt(r.totalProjBonus||0)+proj+'</td><td>'+allowCell+'</td><td>'+deductCell+'</td><td style="font-size:11px;color:var(--text-muted)">'+(r.note||'—')+'</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editRecord('+r.ts+')">編輯</button> <button class="btn btn-danger btn-sm" onclick="deleteRecord('+r.ts+')">刪除</button></td></tr>';
+    return '<tr data-ts="'+r.ts+'"><td><span style="font-family:DM Mono;font-size:12px">'+r.date+'</span></td><td><span class="dot" style="background:'+sc(r.store)+'"></span>'+r.store+'</td><td><div class="tag-list">'+r.staff.map(s=>'<span class="tag">'+s+'</span>').join('')+'</div></td><td style="font-family:DM Mono;color:var(--gold-light)">$'+fmt(r.sales)+'</td><td style="font-family:DM Mono;color:var(--text-dim)">$'+fmt(wageSum)+doublebadge+(wageDetail?'<span style="font-size:9px;color:var(--text-muted);display:block;">'+wageDetail+'</span>':'')+'</td><td style="font-family:DM Mono;color:#82e0aa">$'+fmt(r.totalBonus||0)+(r.bonusOverride&&Object.keys(r.bonusOverride).length?'<br><span style="font-size:9px;background:rgba(230,126,34,.15);color:#e67e22;border:1px solid rgba(230,126,34,.3);border-radius:8px;padding:1px 5px;">⚡例外: '+Object.entries(r.bonusOverride).map(([n,v])=>n+' +$'+fmt(v)).join('、')+'</span>':'')+'</td><td style="font-family:DM Mono;color:#bb8fce">$'+fmt(r.totalProjBonus||0)+proj+'</td><td>'+allowCell+'</td><td>'+deductCell+'</td><td style="font-size:11px;color:var(--text-muted)">'+(r.note||'—')+'</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editRecord('+r.ts+')">編輯</button> <button class="btn btn-danger btn-sm" onclick="deleteRecord('+r.ts+')">刪除</button></td></tr>';
   }).join('');
 }
 function editRecord(ts){
@@ -1689,7 +1792,12 @@ function editRecord(ts){
     const a=r.allowanceData&&r.allowanceData[name]?r.allowanceData[name]:{amt:0,reason:''};
     allowHtml+='<div style="font-size:11px;margin-top:4px;display:flex;align-items:center;gap:6px;">'+name+': <input type="number" class="ed-rec-aamt" data-name="'+name+'" value="'+(a.amt||0)+'" min="0" style="width:70px;">元 <input type="text" class="ed-rec-areason" data-name="'+name+'" value="'+(a.reason||'')+'" placeholder="例：誤餐費、代班補貼、車馬費" style="width:200px;"></div>';
   });
-  tr.innerHTML='<td colspan="11" style="padding:14px;background:var(--surface2);border-radius:8px;"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;"><div><label style="font-size:10px;color:var(--text-muted);">日期</label><input type="date" id="ed-rec-date" value="'+r.date+'" style="width:130px;"></div><div><label style="font-size:10px;color:var(--text-muted);">門市</label><select id="ed-rec-store">'+storeOpts+'</select></div><div><label style="font-size:10px;color:var(--text-muted);">營業額</label><input type="number" id="ed-rec-sales" value="'+r.sales+'" style="width:100px;"></div><div><label style="font-size:10px;color:var(--text-muted);">備註</label><input type="text" id="ed-rec-note" value="'+(r.note||'')+'" style="width:150px;"></div><div style="display:flex;align-items:flex-end;"><label style="font-size:11px;color:#e67e22;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="ed-rec-double" '+(r.doublePay?'checked':'')+' style="width:auto;padding:0;background:transparent;border:none;"> 🎉 雙倍薪資</label></div></div><div style="margin-top:8px;"><label style="font-size:10px;color:var(--text-muted);">員工</label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'+staffChecks+'</div></div><div style="margin-top:8px;"><label style="font-size:10px;color:var(--text-muted);">薪資</label>'+wageHtml+'</div><div style="margin-top:8px;"><label style="font-size:10px;color:#f0b27a;letter-spacing:1px;">➕ 個人加項</label>'+allowHtml+'</div><div style="margin-top:8px;"><label style="font-size:10px;color:var(--red);letter-spacing:1px;">🚫 違規扣款</label>'+deductHtml+'</div><div style="margin-top:10px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="saveEditRecord('+ts+')">儲存</button><button class="btn btn-ghost btn-sm" onclick="renderHistory()">取消</button></div></td>';
+  let internBonusHtml='';
+  r.staff.filter(name=>{const s=staff.find(x=>x.name===name);return s&&s.isIntern;}).forEach(name=>{
+    const override=r.bonusOverride&&r.bonusOverride[name]!=null?r.bonusOverride[name]:0;
+    internBonusHtml+='<div style="font-size:11px;margin-top:4px;display:flex;align-items:center;gap:6px;">🎓 '+name+': <input type="number" class="ed-rec-intern-bonus" data-name="'+name+'" value="'+(override||0)+'" min="0" style="width:90px;">元 <span style="font-size:9px;color:#e67e22;">⚡例外</span></div>';
+  });
+  tr.innerHTML='<td colspan="11" style="padding:14px;background:var(--surface2);border-radius:8px;"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;"><div><label style="font-size:10px;color:var(--text-muted);">日期</label><input type="date" id="ed-rec-date" value="'+r.date+'" style="width:130px;"></div><div><label style="font-size:10px;color:var(--text-muted);">門市</label><select id="ed-rec-store">'+storeOpts+'</select></div><div><label style="font-size:10px;color:var(--text-muted);">營業額</label><input type="number" id="ed-rec-sales" value="'+r.sales+'" style="width:100px;"></div><div><label style="font-size:10px;color:var(--text-muted);">備註</label><input type="text" id="ed-rec-note" value="'+(r.note||'')+'" style="width:150px;"></div><div style="display:flex;align-items:flex-end;"><label style="font-size:11px;color:#e67e22;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="ed-rec-double" '+(r.doublePay?'checked':'')+' style="width:auto;padding:0;background:transparent;border:none;"> 🎉 雙倍薪資</label></div></div><div style="margin-top:8px;"><label style="font-size:10px;color:var(--text-muted);">員工</label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'+staffChecks+'</div></div><div style="margin-top:8px;"><label style="font-size:10px;color:var(--text-muted);">薪資</label>'+wageHtml+'</div><div style="margin-top:8px;"><label style="font-size:10px;color:#f0b27a;letter-spacing:1px;">➕ 個人加項</label>'+allowHtml+'</div>'+(internBonusHtml?'<div style="margin-top:8px;"><label style="font-size:10px;color:#e67e22;letter-spacing:1px;">🎓 實習生業績例外調整</label>'+internBonusHtml+'</div>':'')+'<div style="margin-top:8px;"><label style="font-size:10px;color:var(--red);letter-spacing:1px;">🚫 違規扣款</label>'+deductHtml+'</div><div style="margin-top:10px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="saveEditRecord('+ts+')">儲存</button><button class="btn btn-ghost btn-sm" onclick="renderHistory()">取消</button></div></td>';
 }
 function saveEditRecord(ts){
   const r=records.find(x=>x.ts===ts);if(!r)return;
@@ -1731,7 +1839,15 @@ function saveEditRecord(ts){
   r.allowanceData=newAllow;
   r.totalAllow=Object.values(newAllow).reduce((s,a)=>s+(a.amt||0),0);
   r.doublePay=document.getElementById('ed-rec-double')?.checked||false;
-  logAction('編輯營業額紀錄',r.date+' '+r.store+' 營業額$'+fmt(r.sales)+' 員工:'+r.staff.join('、'));
+  const newInternBonus={};
+  document.querySelectorAll('.ed-rec-intern-bonus').forEach(el=>{
+    const name=el.getAttribute('data-name');
+    const amt=Number(el.value||0);
+    if(amt>0)newInternBonus[name]=amt;
+  });
+  r.bonusOverride=Object.keys(newInternBonus).length?newInternBonus:undefined;
+  const hasOverride=r.bonusOverride&&Object.keys(r.bonusOverride).length>0;
+  logAction('編輯營業額紀錄',r.date+' '+r.store+' 營業額$'+fmt(r.sales)+' 員工:'+r.staff.join('、')+(hasOverride?' [含實習生例外:'+Object.entries(r.bonusOverride).map(([n,v])=>n+'$'+v).join(',')+ ']':''));
   saveAll();renderHistory();showToast('✅ 紀錄已更新');
 }
 function deleteRecord(ts){
@@ -1783,12 +1899,10 @@ function calcBonus(){
   staff.forEach(s=>{agg[s.name]={sb:0,pb:0,deduct:0,wage:0,days:0,sales:0};});
   mr.forEach(r=>{
     const hc=r.staff.length||1;
-    const totalHoursR=r.wageData?r.staff.reduce((s,n)=>s+(r.wageData[n]?r.wageData[n].hours||0:0),0):0;
+    const bonusDist=distributeBonusForRecord(r,staff);
     r.staff.forEach(name=>{
       if(!agg[name])agg[name]={sb:0,pb:0,deduct:0,wage:0,days:0,sales:0};
-      const myHours=r.wageData&&r.wageData[name]?r.wageData[name].hours||0:0;
-      const sbRatio=totalHoursR>0?myHours/totalHoursR:1/hc;
-      agg[name].sb+=(r.totalBonus||0)*sbRatio;
+      agg[name].sb+=bonusDist[name]||0;
       agg[name].days+=1;
       agg[name].sales+=r.sales/hc;
       if(r.projPerStaff&&r.projPerStaff[name]){agg[name].pb+=r.projPerStaff[name].reduce((s,e)=>s+e.amt*e.count,0);}
@@ -1821,12 +1935,10 @@ function printBonus(){
   staff.forEach(s=>{agg[s.name]={sb:0,pb:0,deduct:0,wage:0,days:0,sales:0};});
   mr.forEach(r=>{
     const hc=r.staff.length||1;
-    const totalHoursR=r.wageData?r.staff.reduce((s,n)=>s+(r.wageData[n]?r.wageData[n].hours||0:0),0):0;
+    const bonusDist=distributeBonusForRecord(r,staff);
     r.staff.forEach(name=>{
       if(!agg[name])agg[name]={sb:0,pb:0,deduct:0,wage:0,days:0,sales:0};
-      const myHours=r.wageData&&r.wageData[name]?r.wageData[name].hours||0:0;
-      const sbRatio=totalHoursR>0?myHours/totalHoursR:1/hc;
-      agg[name].sb+=(r.totalBonus||0)*sbRatio;agg[name].days+=1;agg[name].sales+=r.sales/hc;
+      agg[name].sb+=bonusDist[name]||0;agg[name].days+=1;agg[name].sales+=r.sales/hc;
       if(r.projPerStaff&&r.projPerStaff[name]){agg[name].pb+=r.projPerStaff[name].reduce((s,e)=>s+e.amt*e.count,0);}
       else{agg[name].pb+=(r.totalProjBonus||0)/hc;}
       if(r.deductData&&r.deductData[name])agg[name].deduct+=(r.deductData[name].amt||0);
@@ -1973,10 +2085,7 @@ function generatePayslip(){
     const wd=r.wageData&&r.wageData[sname]?r.wageData[sname]:{shift:'—',hours:0,wage:0};
     const dd=r.deductData&&r.deductData[sname]?r.deductData[sname]:{amt:0,reason:''};
     const ad=r.allowanceData&&r.allowanceData[sname]?r.allowanceData[sname]:{amt:0,reason:''};
-    const totalHoursR=r.wageData?r.staff.reduce((s,n)=>s+(r.wageData[n]?r.wageData[n].hours||0:0),0):0;
-    const myHours=wd.hours||0;
-    const sbRatio=totalHoursR>0?myHours/totalHoursR:1/hc;
-    const rawSB=Math.round((r.totalBonus||0)*sbRatio);
+    const rawSB=distributeBonusForRecord(r,staff)[sname]||0;
     const netSB=Math.max(0,rawSB-(dd.amt||0)); // 扣款先抵業績獎金
     return{date:r.date,store:r.store,hc,sales:r.sales,sb:netSB,pb:staffPB,ps:staffPS,shift:wd.shift||'—',hours:wd.hours||0,wage:wd.wage||0,doublePay:r.doublePay||false,allow:ad.amt||0,allowReason:ad.reason||''};
   });
@@ -2183,10 +2292,7 @@ function calcStaffPaySummary(sname, month){
     const wd=r.wageData&&r.wageData[sname]?r.wageData[sname]:{hours:0,wage:0};
     const dd=r.deductData&&r.deductData[sname]?r.deductData[sname]:{amt:0};
     const ad=r.allowanceData&&r.allowanceData[sname]?r.allowanceData[sname]:{amt:0};
-    const totalHoursR=r.wageData?r.staff.reduce((s,n)=>s+(r.wageData[n]?r.wageData[n].hours||0:0),0):0;
-    const myHours=wd.hours||0;
-    const sbRatio=totalHoursR>0?myHours/totalHoursR:1/hc;
-    const rawSB=Math.round((r.totalBonus||0)*sbRatio);
+    const rawSB=distributeBonusForRecord(r,staff)[sname]||0;
     const netSB=Math.max(0,rawSB-(dd.amt||0));
     const staffPB=(r.projPerStaff&&r.projPerStaff[sname])?r.projPerStaff[sname].reduce((s,e)=>s+e.amt*e.count,0):Math.round((r.totalProjBonus||0)/hc);
     tWage+=wd.wage||0;
@@ -2421,14 +2527,17 @@ function saveStaff(){
     nhiReduce:sfNHI?Number(document.getElementById('sf-nhi-reduce').value||0):0,
     selfRetire:document.getElementById('sf-retire').checked,
     selfRetireRate:Math.min(6,Math.max(1,Number(document.getElementById('sf-retire-rate').value||1))),
+    isIntern:document.getElementById('sf-intern').checked,
     // legacy compat
     insured:sfLI||sfNHI,
     insuredAmt:sfLI?Number(document.getElementById('sf-li-amt').value||0):(sfNHI?Number(document.getElementById('sf-nhi-amt').value||0):0),
   });
-  logAction('新增員工',name+' ('+id+')'+(document.getElementById('sf-title').value.trim()?' 職稱:'+document.getElementById('sf-title').value.trim():''));
-  saveStaffKey();renderStaff();showToast('✅ 已新增 '+name);
+  const isInternNew=document.getElementById('sf-intern').checked;
+  logAction('新增員工',name+' ('+id+')'+(document.getElementById('sf-title').value.trim()?' 職稱:'+document.getElementById('sf-title').value.trim():'')+(isInternNew?' [實習生]':''));
+  saveStaffKey();renderStaff();showToast('✅ 已新增 '+name+(isInternNew?' 🎓 實習生':''));
   ['sf-name','sf-id','sf-phone','sf-email','sf-join','sf-title'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('sf-title-allowance').value='0';
+  document.getElementById('sf-intern').checked=false;
   document.getElementById('sf-li').checked=false; sfToggleLI();
   document.getElementById('sf-nhi').checked=false; sfToggleNHI();
   document.getElementById('sf-retire').checked=false; sfToggleRetire();
@@ -2475,6 +2584,11 @@ function editStaff(id){
         <div><div class="form-label" style="margin-bottom:6px;">Email</div><input type="text" id="ed-email-${id}" value="${s.email||''}" style="width:100%;"></div>
         <div><div class="form-label" style="margin-bottom:6px;">主要門市</div><select id="ed-store-${id}" style="width:100%;">${storeOpts}</select></div>
         <div><div class="form-label" style="margin-bottom:6px;">到職日</div><input type="date" id="ed-join-${id}" value="${s.join||''}" style="width:100%;"></div>
+        <div><div class="form-label" style="margin-bottom:6px;">身分類型</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);">
+            <input type="checkbox" id="ed-intern-${id}" ${s.isIntern?'checked':''} style="width:auto;padding:0;background:transparent;border:none;"> 🎓 實習生
+          </label>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding-top:14px;border-top:1px solid var(--border);margin-bottom:16px;">
         <div>
@@ -2534,6 +2648,7 @@ function updateStaff(id){
   s.nhiReduce=Number(document.getElementById('ed-nhi-reduce-'+id)?.value||0);
   s.selfRetire=document.getElementById('ed-selfRetire-'+id)?.checked||false;
   s.selfRetireRate=Math.min(6,Math.max(1,Number(document.getElementById('ed-selfRetireRate-'+id)?.value||1)));
+  s.isIntern=document.getElementById('ed-intern-'+id)?.checked||false;
   // legacy compat
   s.insured=s.liInsured||s.nhiInsured;
   s.insuredAmt=s.liAmt||s.nhiAmt||0;
@@ -2545,7 +2660,7 @@ function renderStaff(){
   const tbody=document.getElementById('staff-tbody'),empty=document.getElementById('staff-empty');
   if(!staff.length){tbody.innerHTML='';empty.style.display='';return;}
   empty.style.display='none';
-  tbody.innerHTML=staff.map(s=>'<tr data-sid="'+s.id+'"><td><span style="font-family:DM Mono;font-size:11px;color:var(--gold)">'+s.id+'</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">'+s.name[0]+'</div>'+s.name+'</div></td><td style="font-size:12px;">'+(s.jobTitle?'<span class="badge badge-gold">'+s.jobTitle+'</span>'+(s.titleAllowance?'<br><span style="font-size:10px;color:var(--text-muted);font-family:DM Mono;">+$'+(s.titleAllowance||0)+'/月</span>':''):'<span style="color:var(--text-muted)">—</span>')+'</td><td style="font-family:DM Mono;font-size:12px">'+(s.phone||'—')+'</td><td style="font-size:12px;color:var(--text-muted)">'+(s.email||'—')+'</td><td><span class="badge badge-gold">'+s.store+'</span></td><td style="font-family:DM Mono;font-size:12px">'+(s.join||'—')+'</td><td style="font-size:12px;">'+(s.liInsured?'<span class="badge badge-green" style="font-size:10px;">勞$'+fmt(s.liAmt||0)+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">勞未保</span>')+' '+(s.nhiInsured?'<span class="badge badge-green" style="font-size:10px;">健$'+fmt(s.nhiAmt||0)+(s.nhiDep?'+'+s.nhiDep+'眷':'')+''+(s.nhiReduce?'-'+s.nhiReduce+'%':'')+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">健未保</span>')+(s.selfRetire?'<br><span class="badge badge-gold" style="font-size:10px;">自提'+s.selfRetireRate+'%</span>':'')+'</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editStaff(\''+s.id+'\')">修訂</button> <button class="btn btn-danger btn-sm" onclick="deleteStaff(\''+s.id+'\')">刪除</button></td></tr>').join('');
+  tbody.innerHTML=staff.map(s=>'<tr data-sid="'+s.id+'"><td><span style="font-family:DM Mono;font-size:11px;color:var(--gold)">'+s.id+'</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:'+(s.isIntern?'#7f8c8d':'var(--gold)')+'">'+s.name[0]+'</div>'+s.name+(s.isIntern?'<span style="font-size:10px;background:rgba(127,140,141,.15);color:#95a5a6;border:1px solid rgba(127,140,141,.3);border-radius:10px;padding:1px 7px;margin-left:5px;">🎓 實習</span>':'')+'</div></td><td style="font-size:12px;">'+(s.jobTitle?'<span class="badge badge-gold">'+s.jobTitle+'</span>'+(s.titleAllowance?'<br><span style="font-size:10px;color:var(--text-muted);font-family:DM Mono;">+$'+(s.titleAllowance||0)+'/月</span>':''):'<span style="color:var(--text-muted)">—</span>')+'</td><td style="font-family:DM Mono;font-size:12px">'+(s.phone||'—')+'</td><td style="font-size:12px;color:var(--text-muted)">'+(s.email||'—')+'</td><td><span class="badge badge-gold">'+s.store+'</span></td><td style="font-family:DM Mono;font-size:12px">'+(s.join||'—')+'</td><td style="font-size:12px;">'+(s.liInsured?'<span class="badge badge-green" style="font-size:10px;">勞$'+fmt(s.liAmt||0)+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">勞未保</span>')+' '+(s.nhiInsured?'<span class="badge badge-green" style="font-size:10px;">健$'+fmt(s.nhiAmt||0)+(s.nhiDep?'+'+s.nhiDep+'眷':'')+''+(s.nhiReduce?'-'+s.nhiReduce+'%':'')+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">健未保</span>')+(s.selfRetire?'<br><span class="badge badge-gold" style="font-size:10px;">自提'+s.selfRetireRate+'%</span>':'')+'</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editStaff(\''+s.id+'\')">修訂</button> <button class="btn btn-danger btn-sm" onclick="deleteStaff(\''+s.id+'\')">刪除</button></td></tr>').join('');
 }
 
 function renderTiers(){
@@ -2723,7 +2838,7 @@ function exportLogsCSV(){
 }
 
 function exportBackup(){
-  const data={version:'v2.5.0',exportAt:new Date().toISOString(),staff,records,tiers,projTypes,shifts};
+  const data={version:'v2.6.0',exportAt:new Date().toISOString(),staff,records,tiers,projTypes,shifts};
   const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));a.download='StoreOS_備份_'+isoToday()+'.json';a.click();
   logAction('匯出資料備份','員工'+staff.length+'人 紀錄'+records.length+'筆');
   showToast('✅ 備份檔已下載');
@@ -2748,7 +2863,7 @@ function importBackup(event){
 async function init(){
   const d=new Date(),z=n=>String(n).padStart(2,'0');
   document.getElementById('today-badge').textContent=d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate());
-  document.getElementById('ver-badge').textContent='v2.5.0';
+  document.getElementById('ver-badge').textContent='v2.6.0';
   ['hist-month','bon-month','rpt-month'].forEach(id=>document.getElementById(id).value=thisMonth());
   try{const saved=localStorage.getItem('themeMode');if(saved==='light'){document.body.classList.add('light-mode');document.getElementById('theme-toggle-btn').textContent='🌙 暗色模式';}}catch(e){}
   await loadAllData();await loadUserInfo();
