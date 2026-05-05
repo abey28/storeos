@@ -228,7 +228,7 @@ tr:last-child td{border-bottom:none;}
     <div class="topbar-title" id="topbar-title">總覽儀表板</div>
     <div class="topbar-right"><span id="user-badge">—</span>
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">🌙 暗色模式</button>
-      <span class="ver-badge" id="ver-badge">v2.6.1</span>
+      <span class="ver-badge" id="ver-badge">v2.6.2</span>
       <span class="today-badge" id="today-badge"></span>
     </div>
   </div>
@@ -393,7 +393,10 @@ tr:last-child td{border-bottom:none;}
         <div class="card-title">🧾 員工薪資單</div>
         <div class="month-row">
           <label>員工：</label><select id="ps-staff"><option value="">請選擇員工</option></select>
-          <label>月份：</label><input type="month" id="ps-month">
+          <label>月份：</label><input type="month" id="ps-month" onchange="updatePsDaysHint()">
+          <label title="員工中途到職或離職時，填入實際投保天數，勞健保費將依比例計算；留空代表整月投保">投保天數：</label>
+          <input type="number" id="ps-insured-days" placeholder="留空＝整月" min="1" max="31" style="width:110px;" title="中途到職/離職時填入實際投保天數">
+          <span id="ps-days-hint" style="font-size:11px;color:var(--text-muted);"></span>
           <button class="btn btn-primary" onclick="generatePayslip()">產出薪資單</button>
           <button class="btn btn-info" onclick="printPayslip()">🖨 列印</button>
         </div>
@@ -685,7 +688,19 @@ tr:last-child td{border-bottom:none;}
 
         <div class="cl-item">
           <div class="cl-header">
-            <span class="cl-ver">v2.6.1</span>
+            <span class="cl-ver">v2.6.2</span>
+            <span class="cl-tag">功能更新</span>
+          </div>
+          <ul class="cl-list">
+            <li>薪資單新增「投保天數」欄位：員工中途到職或離職時，可填入實際投保天數，勞保費與健保費將依「天數 ／ 當月總天數」比例計算，留空則維持整月計算</li>
+            <li>薪資單扣除說明自動附上比例公式（例：× 12/31 天），並在員工資訊區塊標示投保天數提醒</li>
+            <li>月份欄位切換時自動顯示當月總天數提示，方便核對</li>
+          </ul>
+        </div>
+
+        <div class="cl-item">
+          <div class="cl-header">
+            <span class="cl-ver">v2.6.2</span>
             <span class="cl-tag">修正</span>
           </div>
           <ul class="cl-list">
@@ -1993,6 +2008,13 @@ function initPayslip(){
   document.getElementById('ps-staff').innerHTML='<option value="">請選擇員工</option>'+staff.map(s=>'<option value="'+s.name+'">'+s.name+'（'+s.id+'）</option>').join('');
   document.getElementById('ps-month').value=thisMonth();
   document.getElementById('pay-summary-month').value=thisMonth();
+  updatePsDaysHint();
+}
+function updatePsDaysHint(){
+  const m=document.getElementById('ps-month').value||thisMonth();
+  const[y,mo]=m.split('-').map(Number);
+  const total=new Date(y,mo,0).getDate();
+  document.getElementById('ps-days-hint').textContent='（該月共 '+total+' 天）';
 }
 /* ── 2026 台灣勞保投保薪資級距表（員工負擔：12.5% × 20% = 2.5%） ── */
 /* 含部分工時（兼職）級距，最低 11,100 起 */
@@ -2156,14 +2178,22 @@ function generatePayslip(){
   const nhiDep=Number(se.nhiDep||0);
   const nhiReduce=Number(se.nhiReduce||0);
   const SUPP_BASE=29500; // 兼職所得補充保費門檻
+  // ── 投保天數（中途到職/離職）──
+  const[psYr,psMo]=month.split('-').map(Number);
+  const totalDaysInMonth=new Date(psYr,psMo,0).getDate();
+  const psInsuredDaysInput=parseInt(document.getElementById('ps-insured-days').value,10);
+  const insuredDays=(psInsuredDaysInput>=1&&psInsuredDaysInput<totalDaysInMonth)?psInsuredDaysInput:totalDaysInMonth;
+  const isPartialMonth=insuredDays<totalDaysInMonth;
   let liDeduct=0,nhiDeduct=0,liBase=0,nhiBase=0,suppPremium=0;
   const deductLines=[];
 
   // ── 勞保 ──
   if(liInsured&&liInsuredAmt>0){
     liBase=getLIBracket(liInsuredAmt);
-    liDeduct=Math.round(liBase*0.125*0.2);
-    deductLines.push({label:'勞保費（員工負擔）',amt:liDeduct,note:'投保薪資級距 $'+fmt(liBase)+' × 12.5% × 20%'});
+    const liFullMonth=Math.round(liBase*0.125*0.2);
+    liDeduct=isPartialMonth?Math.round(liFullMonth*insuredDays/totalDaysInMonth):liFullMonth;
+    const liDayNote=isPartialMonth?' × '+insuredDays+'/'+totalDaysInMonth+' 天（比例計算）':'';
+    deductLines.push({label:'勞保費（員工負擔）',amt:liDeduct,note:'投保薪資級距 $'+fmt(liBase)+' × 12.5% × 20%'+liDayNote});
   }
 
   // ── 健保 ──
@@ -2171,10 +2201,12 @@ function generatePayslip(){
     nhiBase=getNHIBracket(nhiInsuredAmt);
     const reduceMulti=Math.max(0,1-(nhiReduce/100));
     const depMulti=1+nhiDep;
-    nhiDeduct=Math.round(nhiBase*0.0517*0.3*depMulti*reduceMulti);
+    const nhiFullMonth=Math.round(nhiBase*0.0517*0.3*depMulti*reduceMulti);
+    nhiDeduct=isPartialMonth?Math.round(nhiFullMonth*insuredDays/totalDaysInMonth):nhiFullMonth;
     const depNote=nhiDep>0?'×(1+'+nhiDep+'眷)':'';
     const reduceNote=nhiReduce>0?'×(1-'+nhiReduce+'%)':'';
-    deductLines.push({label:'健保費（員工負擔）',amt:nhiDeduct,note:'投保薪資級距 $'+fmt(nhiBase)+' × 5.17% × 30%'+depNote+reduceNote});
+    const nhiDayNote=isPartialMonth?' × '+insuredDays+'/'+totalDaysInMonth+' 天（比例計算）':'';
+    deductLines.push({label:'健保費（員工負擔）',amt:nhiDeduct,note:'投保薪資級距 $'+fmt(nhiBase)+' × 5.17% × 30%'+depNote+reduceNote+nhiDayNote});
 
     // 有投保健保：獎金超過投保薪資4倍補充保費
     const bonusCap=nhiInsuredAmt*4;
@@ -2291,6 +2323,7 @@ function generatePayslip(){
       '<div><span style="color:#777">月份累計營業額：</span>$'+fmt(tSales)+'</div>'+
       '<div><span style="color:#777">勞保：</span>'+(liInsured?'<b style="color:#1a7a45">已投保（月薪資 $'+fmt(liInsuredAmt)+'）</b>':'<span style="color:#e67e22">未投保</span>')+'</div>'+
       '<div><span style="color:#777">健保：</span>'+(nhiInsured?'<b style="color:#1a7a45">已投保（月薪資 $'+fmt(nhiInsuredAmt)+'）'+(nhiDep?'，眷屬'+nhiDep+'人':'')+''+(nhiReduce?'，減免'+nhiReduce+'%':'')+'</b>':'<span style="color:#e67e22">未投保</span>')+'</div>'+
+      (isPartialMonth?'<div><span style="color:#777">投保天數：</span><b style="color:#c0392b">'+insuredDays+' 天 / 當月 '+totalDaysInMonth+' 天（比例計算）</b></div>':'')+
     '</div>'+
     '<div style="font-size:10px;letter-spacing:3px;color:#555;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:12px;">出班明細</div>'+
     '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">'+
@@ -2911,7 +2944,7 @@ function importBackup(event){
 async function init(){
   const d=new Date(),z=n=>String(n).padStart(2,'0');
   document.getElementById('today-badge').textContent=d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate());
-  document.getElementById('ver-badge').textContent='v2.6.1';
+  document.getElementById('ver-badge').textContent='v2.6.2';
   ['hist-month','bon-month','rpt-month'].forEach(id=>document.getElementById(id).value=thisMonth());
   try{const saved=localStorage.getItem('themeMode');if(saved==='light'){document.body.classList.add('light-mode');document.getElementById('theme-toggle-btn').textContent='🌙 暗色模式';}}catch(e){}
   await loadAllData();await loadUserInfo();
