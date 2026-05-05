@@ -228,7 +228,7 @@ tr:last-child td{border-bottom:none;}
     <div class="topbar-title" id="topbar-title">總覽儀表板</div>
     <div class="topbar-right"><span id="user-badge">—</span>
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">🌙 暗色模式</button>
-      <span class="ver-badge" id="ver-badge">v2.6.0</span>
+      <span class="ver-badge" id="ver-badge">v2.6.1</span>
       <span class="today-badge" id="today-badge"></span>
     </div>
   </div>
@@ -682,6 +682,17 @@ tr:last-child td{border-bottom:none;}
     <div class="page" id="page-changelog">
       <div class="card">
         <div class="card-title">🗒️ 版本修訂記錄</div>
+
+        <div class="cl-item">
+          <div class="cl-header">
+            <span class="cl-ver">v2.6.1</span>
+            <span class="cl-tag">修正</span>
+          </div>
+          <ul class="cl-list">
+            <li>修正勞保、健保投保薪資級距表：原級距表第一格直接從 $26,400（勞保）/$27,470（健保）起跳，兼職員工薪資低於此金額時會被強制套用全職最低級距，導致扣除額計算偏高</li>
+            <li>加入 2026 台灣官方部分工時（兼職）級距：勞保與健保均從 $11,100 起，共新增 15 個兼職級距（$11,100 → $25,200），兼職員工現可依實際薪資對應正確級距</li>
+          </ul>
+        </div>
 
         <div class="cl-item">
           <div class="cl-header">
@@ -1984,8 +1995,26 @@ function initPayslip(){
   document.getElementById('pay-summary-month').value=thisMonth();
 }
 /* ── 2026 台灣勞保投保薪資級距表（員工負擔：12.5% × 20% = 2.5%） ── */
+/* 含部分工時（兼職）級距，最低 11,100 起 */
 const LI_BRACKETS=[
-  {min:0,    max:26400, ins:26400},
+  // 部分工時級距
+  {min:0,    max:11100, ins:11100},
+  {min:11101,max:12540, ins:12540},
+  {min:12541,max:13500, ins:13500},
+  {min:13501,max:15840, ins:15840},
+  {min:15841,max:16500, ins:16500},
+  {min:16501,max:17280, ins:17280},
+  {min:17281,max:17880, ins:17880},
+  {min:17881,max:18780, ins:18780},
+  {min:18781,max:19200, ins:19200},
+  {min:19201,max:20100, ins:20100},
+  {min:20101,max:21000, ins:21000},
+  {min:21001,max:21900, ins:21900},
+  {min:21901,max:22800, ins:22800},
+  {min:22801,max:24000, ins:24000},
+  {min:24001,max:25200, ins:25200},
+  // 全職級距（≥ 基本工資）
+  {min:25201,max:26400, ins:26400},
   {min:26401,max:27600, ins:27600},
   {min:27601,max:28800, ins:28800},
   {min:28801,max:30300, ins:30300},
@@ -2016,8 +2045,27 @@ const LI_BRACKETS=[
   {min:110101,max:182000,ins:182000},
 ];
 /* 2026 健保投保金額級距（員工負擔：5.17% × 30%） */
+/* 含部分工時（兼職）級距，最低 11,100 起 */
 const NHI_BRACKETS=[
-  {min:0,    max:27470, ins:27470},
+  // 部分工時級距
+  {min:0,    max:11100, ins:11100},
+  {min:11101,max:12540, ins:12540},
+  {min:12541,max:13500, ins:13500},
+  {min:13501,max:15840, ins:15840},
+  {min:15841,max:16500, ins:16500},
+  {min:16501,max:17280, ins:17280},
+  {min:17281,max:17880, ins:17880},
+  {min:17881,max:18780, ins:18780},
+  {min:18781,max:19200, ins:19200},
+  {min:19201,max:20100, ins:20100},
+  {min:20101,max:21000, ins:21000},
+  {min:21001,max:21900, ins:21900},
+  {min:21901,max:22800, ins:22800},
+  {min:22801,max:24000, ins:24000},
+  {min:24001,max:25200, ins:25200},
+  {min:25201,max:26400, ins:26400},
+  // 全職級距（≥ 基本工資）
+  {min:26401,max:27470, ins:27470},
   {min:27471,max:28800, ins:28800},
   {min:28801,max:30300, ins:30300},
   {min:30301,max:31800, ins:31800},
@@ -2863,7 +2911,7 @@ function importBackup(event){
 async function init(){
   const d=new Date(),z=n=>String(n).padStart(2,'0');
   document.getElementById('today-badge').textContent=d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate());
-  document.getElementById('ver-badge').textContent='v2.6.0';
+  document.getElementById('ver-badge').textContent='v2.6.1';
   ['hist-month','bon-month','rpt-month'].forEach(id=>document.getElementById(id).value=thisMonth());
   try{const saved=localStorage.getItem('themeMode');if(saved==='light'){document.body.classList.add('light-mode');document.getElementById('theme-toggle-btn').textContent='🌙 暗色模式';}}catch(e){}
   await loadAllData();await loadUserInfo();
