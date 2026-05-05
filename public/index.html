@@ -228,7 +228,7 @@ tr:last-child td{border-bottom:none;}
     <div class="topbar-title" id="topbar-title">總覽儀表板</div>
     <div class="topbar-right"><span id="user-badge">—</span>
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">🌙 暗色模式</button>
-      <span class="ver-badge" id="ver-badge">v2.6.2</span>
+      <span class="ver-badge" id="ver-badge">v2.6.3</span>
       <span class="today-badge" id="today-badge"></span>
     </div>
   </div>
@@ -393,12 +393,38 @@ tr:last-child td{border-bottom:none;}
         <div class="card-title">🧾 員工薪資單</div>
         <div class="month-row">
           <label>員工：</label><select id="ps-staff"><option value="">請選擇員工</option></select>
-          <label>月份：</label><input type="month" id="ps-month" onchange="updatePsDaysHint()">
-          <label title="員工中途到職或離職時，填入實際投保天數，勞健保費將依比例計算；留空代表整月投保">投保天數：</label>
-          <input type="number" id="ps-insured-days" placeholder="留空＝整月" min="1" max="31" style="width:110px;" title="中途到職/離職時填入實際投保天數">
-          <span id="ps-days-hint" style="font-size:11px;color:var(--text-muted);"></span>
+          <label>月份：</label><input type="month" id="ps-month" onchange="updatePsChangeHint()">
           <button class="btn btn-primary" onclick="generatePayslip()">產出薪資單</button>
           <button class="btn btn-info" onclick="printPayslip()">🖨 列印</button>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--text-dim);width:fit-content;">
+            <input type="checkbox" id="ps-has-change" onchange="togglePsChange()" style="width:auto;padding:0;background:transparent;border:none;">
+            當月有在職異動（到職 / 離職）
+          </label>
+          <div id="ps-change-detail" style="display:none;margin-top:12px;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+            <div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;">當月在職狀態設定 <span style="color:var(--text-muted);font-weight:normal;">（<span id="ps-days-hint">—</span>）</span></div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+              <div>
+                <div class="form-label" style="margin-bottom:6px;">到職日（當月新到職）</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="number" id="ps-join-day" placeholder="—" min="1" max="31" style="width:72px;" oninput="updatePsChangeHint()">
+                  <span style="font-size:12px;color:var(--text-muted);">日</span>
+                </div>
+              </div>
+              <div>
+                <div class="form-label" style="margin-bottom:6px;">離職日（當月離職）</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="number" id="ps-leave-day" placeholder="—" min="1" max="31" style="width:72px;" oninput="updatePsChangeHint()">
+                  <span style="font-size:12px;color:var(--text-muted);">日</span>
+                </div>
+              </div>
+              <div id="ps-change-hint" style="font-size:12px;color:var(--text-muted);line-height:2;padding-top:22px;"></div>
+            </div>
+            <div style="margin-top:12px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px;">
+              ⚖️ 法規依據：勞保依實際投保天數比例計算；健保月中離職不扣（整月制），月底最後一天離職或月中到職均扣整月。
+            </div>
+          </div>
         </div>
         <div id="payslip-preview"></div>
       </div>
@@ -637,6 +663,7 @@ tr:last-child td{border-bottom:none;}
           <div class="help-h4">⑥ 薪資單列印</div>
           <ul class="help-ul">
             <li class="help-li">選擇員工與月份，產出含出班明細、獎金摘要的正式薪資單</li>
+            <li class="help-li">若員工當月有到職或離職，勾選「當月有在職異動」並填入日期，系統自動依法計算勞健保</li>
             <li class="help-li">設有主管簽章欄及員工簽收欄，列印後直接交予員工</li>
           </ul>
 
@@ -647,6 +674,44 @@ tr:last-child td{border-bottom:none;}
             <li class="help-li">支援一鍵匯出 CSV，便於定期歸檔或稽核審閱</li>
           </ul>
           <div class="help-tip">🛡️ 登入者信箱由 Cloudflare Zero Trust Access 驗證標頭取得，無法偽造；未登入狀態下顯示「訪客」。</div>
+        </div>
+
+        <div class="help-block">
+          <div class="help-h3">⚖️ 勞保 &amp; 健保計算規則（2026 台灣法規）</div>
+
+          <div class="help-h4">📌 勞工保險（勞保）— 按天比例計算</div>
+          <ul class="help-ul">
+            <li class="help-li">月費 = 投保薪資級距 × 12.5%（總費率）× 20%（員工負擔比例）</li>
+            <li class="help-li"><b>整月在職：</b>扣整月費用</li>
+            <li class="help-li"><b>當月新到職（第 N 日）：</b>勞保費 × (當月天數 − N + 1) ÷ 當月天數</li>
+            <li class="help-li"><b>當月離職（第 N 日）：</b>勞保費 × N ÷ 當月天數</li>
+            <li class="help-li">依據：《勞工保險條例》第 14 條，保費按實際投保日數比例計算</li>
+          </ul>
+
+          <div class="help-h4">📌 全民健康保險（健保）— 按月計算，中途離職不扣</div>
+          <ul class="help-ul">
+            <li class="help-li">月費 = 投保薪資級距 × 5.17%（費率）× 30%（員工負擔比例）</li>
+            <li class="help-li"><b>整月在職：</b>扣整月費用</li>
+            <li class="help-li"><b>當月新到職（任何日期）：</b>健保以月為單位，扣整月費用</li>
+            <li class="help-li"><b>當月中途離職（非月底）：</b>健保不從薪資扣除，退保次日起由新單位或地區人口接續投保，保費由新投保單位承接</li>
+            <li class="help-li"><b>月底最後一天離職：</b>視為整月投保，扣整月費用</li>
+            <li class="help-li">依據：《全民健康保險法》第 27 條，健保費以月計算；退保後由次日起轉入其他類別</li>
+          </ul>
+
+          <div class="help-h4">📌 投保薪資級距（兼職適用，2026）</div>
+          <ul class="help-ul">
+            <li class="help-li">勞保、健保均設有級距表，以實際薪資「對應到最接近的級距上限」為計算基礎</li>
+            <li class="help-li">全職最低級距：勞保 $26,400，健保 $27,470（約對應基本工資）</li>
+            <li class="help-li">兼職最低級距：勞保、健保均從 $11,100 起，每級約 $500–$2,000 不等，共 15 個兼職級距</li>
+            <li class="help-li">例：月薪 $11,000 → 級距 $11,100，勞保費 $278，健保費 $172（整月）</li>
+          </ul>
+
+          <div class="help-h4">📌 二代健保補充保費</div>
+          <ul class="help-ul">
+            <li class="help-li"><b>有健保投保者：</b>月獎金超過投保薪資 4 倍時，超出部分 × 2.11%</li>
+            <li class="help-li"><b>無投保者（兼職）：</b>底薪或獎金各自單次超過 $29,500 時，整筆 × 2.11%</li>
+          </ul>
+          <div class="help-tip">💡 本系統薪資單頁面提供「當月在職異動」設定，勾選後填入到職日或離職日，所有計算自動依上述規則處理，無需手動換算。</div>
         </div>
 
         <div class="help-block">
@@ -688,19 +753,21 @@ tr:last-child td{border-bottom:none;}
 
         <div class="cl-item">
           <div class="cl-header">
-            <span class="cl-ver">v2.6.2</span>
+            <span class="cl-ver">v2.6.3</span>
             <span class="cl-tag">功能更新</span>
           </div>
           <ul class="cl-list">
-            <li>薪資單新增「投保天數」欄位：員工中途到職或離職時，可填入實際投保天數，勞保費與健保費將依「天數 ／ 當月總天數」比例計算，留空則維持整月計算</li>
-            <li>薪資單扣除說明自動附上比例公式（例：× 12/31 天），並在員工資訊區塊標示投保天數提醒</li>
-            <li>月份欄位切換時自動顯示當月總天數提示，方便核對</li>
+            <li>薪資單新增「當月在職異動」折疊設定：員工中途到職或離職時，勾選後填入到職日／離職日，系統依台灣法規自動計算勞健保</li>
+            <li>勞保依實際投保天數比例計算（到職從到職日起算；離職計算到離職日）；依據《勞工保險條例》第 14 條</li>
+            <li>健保月中離職不扣（整月制）；月底最後一天離職或月中到職則扣整月；依據《全民健康保險法》第 27 條</li>
+            <li>薪資單表頭自動顯示到職日／離職日及對應計算說明；健保免扣時在減項欄位顯示「免扣」並附法規說明，取代前版 -$0 的不合理顯示</li>
+            <li>說明頁新增「勞保 &amp; 健保計算規則（2026 台灣法規）」完整說明區塊，含計算公式、法條依據、兼職級距範例及二代健保補充保費說明</li>
           </ul>
         </div>
 
         <div class="cl-item">
           <div class="cl-header">
-            <span class="cl-ver">v2.6.2</span>
+            <span class="cl-ver">v2.6.3</span>
             <span class="cl-tag">修正</span>
           </div>
           <ul class="cl-list">
@@ -2008,13 +2075,35 @@ function initPayslip(){
   document.getElementById('ps-staff').innerHTML='<option value="">請選擇員工</option>'+staff.map(s=>'<option value="'+s.name+'">'+s.name+'（'+s.id+'）</option>').join('');
   document.getElementById('ps-month').value=thisMonth();
   document.getElementById('pay-summary-month').value=thisMonth();
-  updatePsDaysHint();
+  updatePsChangeHint();
 }
-function updatePsDaysHint(){
+function togglePsChange(){
+  const show=document.getElementById('ps-has-change').checked;
+  document.getElementById('ps-change-detail').style.display=show?'block':'none';
+  if(show)updatePsChangeHint();
+}
+function updatePsChangeHint(){
   const m=document.getElementById('ps-month').value||thisMonth();
   const[y,mo]=m.split('-').map(Number);
   const total=new Date(y,mo,0).getDate();
-  document.getElementById('ps-days-hint').textContent='（該月共 '+total+' 天）';
+  document.getElementById('ps-days-hint').textContent='該月共 '+total+' 天';
+  if(!document.getElementById('ps-has-change').checked)return;
+  const joinDay=parseInt(document.getElementById('ps-join-day').value,10);
+  const leaveDay=parseInt(document.getElementById('ps-leave-day').value,10);
+  const hints=[];
+  if(joinDay>=1&&joinDay<=total){
+    const liDays=total-joinDay+1;
+    hints.push('✅ 到職（第 '+joinDay+' 日）→ 勞保 '+liDays+'/'+total+' 天，健保整月');
+  }
+  if(leaveDay>=1&&leaveDay<=total){
+    if(leaveDay===total){
+      hints.push('✅ 離職（第 '+leaveDay+' 日，月底）→ 勞保整月，健保整月');
+    } else {
+      const liDays2=leaveDay;
+      hints.push('✅ 離職（第 '+leaveDay+' 日）→ 勞保 '+liDays2+'/'+total+' 天，健保不扣');
+    }
+  }
+  document.getElementById('ps-change-hint').innerHTML=hints.join('<br>')||'<span style="color:var(--text-muted)">請輸入到職日或離職日</span>';
 }
 /* ── 2026 台灣勞保投保薪資級距表（員工負擔：12.5% × 20% = 2.5%） ── */
 /* 含部分工時（兼職）級距，最低 11,100 起 */
@@ -2178,12 +2267,21 @@ function generatePayslip(){
   const nhiDep=Number(se.nhiDep||0);
   const nhiReduce=Number(se.nhiReduce||0);
   const SUPP_BASE=29500; // 兼職所得補充保費門檻
-  // ── 投保天數（中途到職/離職）──
+  // ── 當月在職異動（到職 / 離職）──
   const[psYr,psMo]=month.split('-').map(Number);
   const totalDaysInMonth=new Date(psYr,psMo,0).getDate();
-  const psInsuredDaysInput=parseInt(document.getElementById('ps-insured-days').value,10);
-  const insuredDays=(psInsuredDaysInput>=1&&psInsuredDaysInput<totalDaysInMonth)?psInsuredDaysInput:totalDaysInMonth;
-  const isPartialMonth=insuredDays<totalDaysInMonth;
+  const hasChange=document.getElementById('ps-has-change').checked;
+  const joinDayRaw=hasChange?parseInt(document.getElementById('ps-join-day').value,10):NaN;
+  const leaveDayRaw=hasChange?parseInt(document.getElementById('ps-leave-day').value,10):NaN;
+  const joinDay=(joinDayRaw>=1&&joinDayRaw<=totalDaysInMonth)?joinDayRaw:null;
+  const leaveDay=(leaveDayRaw>=1&&leaveDayRaw<=totalDaysInMonth)?leaveDayRaw:null;
+  // 勞保：到職從到職日算到月底；離職從1日算到離職日；兩者取較少天數
+  let liInsuredDays=totalDaysInMonth;
+  if(joinDay)liInsuredDays=Math.min(liInsuredDays,totalDaysInMonth-joinDay+1);
+  if(leaveDay)liInsuredDays=Math.min(liInsuredDays,leaveDay);
+  const isPartialLI=liInsuredDays<totalDaysInMonth;
+  // 健保：月中離職（非月底）不扣；月中到職或月底離職扣整月
+  const nhiSkip=!!(leaveDay&&leaveDay<totalDaysInMonth);
   let liDeduct=0,nhiDeduct=0,liBase=0,nhiBase=0,suppPremium=0;
   const deductLines=[];
 
@@ -2191,29 +2289,34 @@ function generatePayslip(){
   if(liInsured&&liInsuredAmt>0){
     liBase=getLIBracket(liInsuredAmt);
     const liFullMonth=Math.round(liBase*0.125*0.2);
-    liDeduct=isPartialMonth?Math.round(liFullMonth*insuredDays/totalDaysInMonth):liFullMonth;
-    const liDayNote=isPartialMonth?' × '+insuredDays+'/'+totalDaysInMonth+' 天（比例計算）':'';
+    liDeduct=isPartialLI?Math.round(liFullMonth*liInsuredDays/totalDaysInMonth):liFullMonth;
+    const liDayNote=isPartialLI?' × '+liInsuredDays+'/'+totalDaysInMonth+' 天（依法比例計算）':'';
     deductLines.push({label:'勞保費（員工負擔）',amt:liDeduct,note:'投保薪資級距 $'+fmt(liBase)+' × 12.5% × 20%'+liDayNote});
   }
 
   // ── 健保 ──
   if(nhiInsured&&nhiInsuredAmt>0){
-    nhiBase=getNHIBracket(nhiInsuredAmt);
-    const reduceMulti=Math.max(0,1-(nhiReduce/100));
-    const depMulti=1+nhiDep;
-    const nhiFullMonth=Math.round(nhiBase*0.0517*0.3*depMulti*reduceMulti);
-    nhiDeduct=isPartialMonth?Math.round(nhiFullMonth*insuredDays/totalDaysInMonth):nhiFullMonth;
-    const depNote=nhiDep>0?'×(1+'+nhiDep+'眷)':'';
-    const reduceNote=nhiReduce>0?'×(1-'+nhiReduce+'%)':'';
-    const nhiDayNote=isPartialMonth?' × '+insuredDays+'/'+totalDaysInMonth+' 天（比例計算）':'';
-    deductLines.push({label:'健保費（員工負擔）',amt:nhiDeduct,note:'投保薪資級距 $'+fmt(nhiBase)+' × 5.17% × 30%'+depNote+reduceNote+nhiDayNote});
+    if(nhiSkip){
+      // 月中離職：健保不扣，僅記錄說明
+      deductLines.push({label:'健保費（員工負擔）',amt:0,note:'月中離職（'+leaveDay+' 日，非月底）— 依《全民健康保險法》不扣，由退保次日起轉由新單位或地區人口接續投保',skip:true});
+    } else {
+      nhiBase=getNHIBracket(nhiInsuredAmt);
+      const reduceMulti=Math.max(0,1-(nhiReduce/100));
+      const depMulti=1+nhiDep;
+      nhiDeduct=Math.round(nhiBase*0.0517*0.3*depMulti*reduceMulti);
+      const depNote=nhiDep>0?'×(1+'+nhiDep+'眷)':'';
+      const reduceNote=nhiReduce>0?'×(1-'+nhiReduce+'%)':'';
+      const joinNote=joinDay?'（當月第 '+joinDay+' 日到職，健保整月計算）':'';
+      const lastDayNote=(leaveDay&&leaveDay===totalDaysInMonth)?'（月底離職，健保整月計算）':'';
+      deductLines.push({label:'健保費（員工負擔）',amt:nhiDeduct,note:'投保薪資級距 $'+fmt(nhiBase)+' × 5.17% × 30%'+depNote+reduceNote+(joinNote||lastDayNote)});
 
-    // 有投保健保：獎金超過投保薪資4倍補充保費
-    const bonusCap=nhiInsuredAmt*4;
-    if(grossBonus>bonusCap){
-      const sp=Math.round((grossBonus-bonusCap)*0.0211);
-      suppPremium+=sp;
-      deductLines.push({label:'二代健保補充保費',amt:sp,note:'獎金 $'+fmt(grossBonus)+' 超過投保薪資4倍 $'+fmt(bonusCap)+'，超過部分 × 2.11%'});
+      // 有投保健保：獎金超過投保薪資4倍補充保費
+      const bonusCap=nhiInsuredAmt*4;
+      if(grossBonus>bonusCap){
+        const sp=Math.round((grossBonus-bonusCap)*0.0211);
+        suppPremium+=sp;
+        deductLines.push({label:'二代健保補充保費',amt:sp,note:'獎金 $'+fmt(grossBonus)+' 超過投保薪資4倍 $'+fmt(bonusCap)+'，超過部分 × 2.11%'});
+      }
     }
   }
 
@@ -2295,7 +2398,7 @@ function generatePayslip(){
   // ── 減項列表（勞健保） ──
   let deductSection='';
   if(deductLines.length){
-    const rows2=deductLines.map(d=>'<tr><td style="padding:6px 10px;font-size:12px;color:#555;">'+d.label+'</td><td style="padding:6px 10px;font-size:11px;color:#888;">'+d.note+'</td><td style="padding:6px 10px;text-align:right;font-size:13px;font-weight:700;color:#c0392b;">-$'+fmt(d.amt)+'</td></tr>').join('');
+    const rows2=deductLines.map(d=>'<tr><td style="padding:6px 10px;font-size:12px;color:#555;">'+d.label+'</td><td style="padding:6px 10px;font-size:11px;color:#888;">'+d.note+'</td><td style="padding:6px 10px;text-align:right;font-size:13px;font-weight:700;'+(d.skip?'color:#888;">免扣':'color:#c0392b;">-$'+fmt(d.amt))+'</td></tr>').join('');
     deductSection='<div style="font-size:10px;letter-spacing:3px;color:#555;border-bottom:1px solid #ddd;padding-bottom:5px;margin:18px 0 12px;">勞健保扣除項目</div>'+
       '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;background:#fdfafa;border-radius:8px;overflow:hidden;">'+
       '<thead><tr style="background:#f7f0f0;"><th style="padding:6px 10px;text-align:left;font-size:10px;color:#888;">項目</th><th style="padding:6px 10px;text-align:left;font-size:10px;color:#888;">說明</th><th style="padding:6px 10px;text-align:right;font-size:10px;color:#888;">金額</th></tr></thead>'+
@@ -2323,7 +2426,9 @@ function generatePayslip(){
       '<div><span style="color:#777">月份累計營業額：</span>$'+fmt(tSales)+'</div>'+
       '<div><span style="color:#777">勞保：</span>'+(liInsured?'<b style="color:#1a7a45">已投保（月薪資 $'+fmt(liInsuredAmt)+'）</b>':'<span style="color:#e67e22">未投保</span>')+'</div>'+
       '<div><span style="color:#777">健保：</span>'+(nhiInsured?'<b style="color:#1a7a45">已投保（月薪資 $'+fmt(nhiInsuredAmt)+'）'+(nhiDep?'，眷屬'+nhiDep+'人':'')+''+(nhiReduce?'，減免'+nhiReduce+'%':'')+'</b>':'<span style="color:#e67e22">未投保</span>')+'</div>'+
-      (isPartialMonth?'<div><span style="color:#777">投保天數：</span><b style="color:#c0392b">'+insuredDays+' 天 / 當月 '+totalDaysInMonth+' 天（比例計算）</b></div>':'')+
+      (joinDay?'<div><span style="color:#777">到職日：</span><b style="color:#1a7a45">'+yr+'年'+mo+'月 '+joinDay+' 日（勞保 '+(totalDaysInMonth-joinDay+1)+'/'+totalDaysInMonth+' 天，健保整月）</b></div>':'')+
+      (leaveDay&&leaveDay<totalDaysInMonth?'<div><span style="color:#777">離職日：</span><b style="color:#c0392b">'+yr+'年'+mo+'月 '+leaveDay+' 日（勞保 '+leaveDay+'/'+totalDaysInMonth+' 天，健保不扣）</b></div>':'')+
+      (leaveDay&&leaveDay===totalDaysInMonth?'<div><span style="color:#777">離職日：</span><b style="color:#555">'+yr+'年'+mo+'月 '+leaveDay+' 日（月底，勞保整月，健保整月）</b></div>':'')+
     '</div>'+
     '<div style="font-size:10px;letter-spacing:3px;color:#555;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:12px;">出班明細</div>'+
     '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">'+
@@ -2944,7 +3049,7 @@ function importBackup(event){
 async function init(){
   const d=new Date(),z=n=>String(n).padStart(2,'0');
   document.getElementById('today-badge').textContent=d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate());
-  document.getElementById('ver-badge').textContent='v2.6.2';
+  document.getElementById('ver-badge').textContent='v2.6.3';
   ['hist-month','bon-month','rpt-month'].forEach(id=>document.getElementById(id).value=thisMonth());
   try{const saved=localStorage.getItem('themeMode');if(saved==='light'){document.body.classList.add('light-mode');document.getElementById('theme-toggle-btn').textContent='🌙 暗色模式';}}catch(e){}
   await loadAllData();await loadUserInfo();
