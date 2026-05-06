@@ -2727,46 +2727,85 @@ function printPaySummary(){
   const pages=[];
   for(let i=0;i<results.length;i+=PER_PAGE)pages.push(results.slice(i,i+PER_PAGE));
 
-  const colHeaders='<tr style="background:#f0f0f0;font-size:10px;"><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ddd;">姓名</th><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ddd;">編號</th><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ddd;">門市</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">底薪</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">加項</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">職稱加給</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">勞保</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">健保</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">退休金</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eef4ff">兼職補充</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#d0e8ff;font-weight:700;">A實付</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eefaf5">業績獎金</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eefaf5">專案獎金</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#eefaf5">補充保費</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#c8f0dd;font-weight:700;">B實付</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd;background:#fff5cc;font-weight:700;">合計</th></tr>';
+  const TH='padding:5px 7px;border-bottom:2px solid #ccc;font-size:13px;white-space:nowrap;';
+  const colHeaders='<tr style="background:#e8e8e8;">'+
+    '<th style="text-align:left;'+TH+'">姓名</th>'+
+    '<th style="text-align:left;'+TH+'">編號</th>'+
+    '<th style="text-align:left;'+TH+'">門市</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">底薪</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">加項</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">職稱加給</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">勞保</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">健保</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">退休金</th>'+
+    '<th style="text-align:right;'+TH+'background:#ddeaff">兼職補充</th>'+
+    '<th style="text-align:right;'+TH+'background:#b8d4f8;font-weight:700;">A實付</th>'+
+    '<th style="text-align:right;'+TH+'background:#d5f0e2">業績獎金</th>'+
+    '<th style="text-align:right;'+TH+'background:#d5f0e2">專案獎金</th>'+
+    '<th style="text-align:right;'+TH+'background:#d5f0e2">補充保費</th>'+
+    '<th style="text-align:right;'+TH+'background:#a8e0c0;font-weight:700;">B實付</th>'+
+    '<th style="text-align:right;'+TH+'background:#ffe97a;font-weight:700;">合計</th>'+
+  '</tr>';
 
+  const TD='padding:5px 7px;border-bottom:1px solid #e0e0e0;font-size:13px;white-space:nowrap;';
   function printRow(r,isTotal){
-    const bg=isTotal?'background:#f5f5f5;font-weight:700;':'';
+    const bg=isTotal?'background:#f0f0f0;font-weight:700;border-top:2px solid #aaa;':'';
     const n=isTotal?'合計':r.name+(r.jobTitle?' ('+r.jobTitle+')':'');
-    return '<tr style="'+bg+'font-size:11px;"><td style="padding:5px 8px;border-bottom:1px solid #eee;">'+n+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;color:#888;">'+(isTotal?'':r.id)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;color:#888;">'+(isTotal?'':r.store)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;background:#f5f9ff">$'+fmt(r.tWage)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;background:#f5f9ff">'+(r.tAllow>0?'+$'+fmt(r.tAllow):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;background:#f5f9ff">'+(r.titleAllowance>0?'+$'+fmt(r.titleAllowance):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#c0392b;background:#f5f9ff">'+(r.liDeduct>0?'-$'+fmt(r.liDeduct):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#c0392b;background:#f5f9ff">'+(r.nhiDeduct>0?'-$'+fmt(r.nhiDeduct):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#c0392b;background:#f5f9ff">'+(r.selfRetireAmt>0?'-$'+fmt(r.selfRetireAmt):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#c0392b;background:#f5f9ff">'+(r.suppWagePremium>0?'-$'+fmt(r.suppWagePremium):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#1565c0;background:#ddeeff">$'+fmt(r.payA_net)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#1a7a45;background:#f5fdf9">$'+fmt(r.tSB)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#6a3aaa;background:#f5fdf9">$'+fmt(r.tPB)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:#c0392b;background:#f5fdf9">'+(r.suppBonusPremium>0?'-$'+fmt(r.suppBonusPremium):'—')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#1a7a45;background:#d0f0e0">$'+fmt(r.payB_net)+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#b8860b;background:#fff5cc">$'+fmt(r.netTotal)+'</td></tr>';
+    return '<tr style="'+bg+'">'+
+      '<td style="'+TD+'">'+n+'</td>'+
+      '<td style="'+TD+'color:#666;">'+  (isTotal?'':r.id)+'</td>'+
+      '<td style="'+TD+'color:#666;">'+  (isTotal?'':r.store)+'</td>'+
+      '<td style="'+TD+'text-align:right;background:#eef3ff">$'+fmt(r.tWage)+'</td>'+
+      '<td style="'+TD+'text-align:right;background:#eef3ff">'+(r.tAllow>0?'+$'+fmt(r.tAllow):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;background:#eef3ff">'+(r.titleAllowance>0?'+$'+fmt(r.titleAllowance):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#c0392b;background:#eef3ff">'+(r.liDeduct>0?'-$'+fmt(r.liDeduct):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#c0392b;background:#eef3ff">'+(r.nhiDeduct>0?'-$'+fmt(r.nhiDeduct):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#c0392b;background:#eef3ff">'+(r.selfRetireAmt>0?'-$'+fmt(r.selfRetireAmt):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#c0392b;background:#eef3ff">'+(r.suppWagePremium>0?'-$'+fmt(r.suppWagePremium):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;font-weight:700;font-size:14px;color:#1145a0;background:#d5e8ff">$'+fmt(r.payA_net)+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#1a7a45;background:#edfaf4">$'+fmt(r.tSB)+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#6a3aaa;background:#edfaf4">$'+fmt(r.tPB)+'</td>'+
+      '<td style="'+TD+'text-align:right;color:#c0392b;background:#edfaf4">'+(r.suppBonusPremium>0?'-$'+fmt(r.suppBonusPremium):'—')+'</td>'+
+      '<td style="'+TD+'text-align:right;font-weight:700;font-size:14px;color:#1a7a45;background:#c3edda">$'+fmt(r.payB_net)+'</td>'+
+      '<td style="'+TD+'text-align:right;font-weight:700;font-size:14px;color:#8a6000;background:#fff0a0">$'+fmt(r.netTotal)+'</td>'+
+    '</tr>';
   }
 
   let bodyHTML='';
   pages.forEach((pg,pi)=>{
     bodyHTML+='<div style="page-break-after:'+(pi<pages.length-1?'always':'auto')+';">'+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">'+
-        '<div><div style="font-size:18px;font-weight:700;letter-spacing:3px;">全員薪資總表</div>'+
-        '<div style="font-size:12px;color:#888;margin-top:4px;">THE food co. 同興 ／ '+yr+'年'+mo+'月 ／ 會計對帳用</div></div>'+
-        '<div style="font-size:11px;color:#888;">第 '+(pi+1)+' 頁 / 共 '+pages.length+' 頁</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">'+
+        '<div>'+
+          '<div style="font-size:22px;font-weight:700;letter-spacing:3px;">全員薪資總表</div>'+
+          '<div style="font-size:13px;color:#666;margin-top:3px;">THE food co. 同興 ／ '+yr+' 年 '+mo+' 月 ／ 會計對帳用</div>'+
+        '</div>'+
+        '<div style="font-size:13px;color:#888;">第 '+(pi+1)+' 頁 / 共 '+pages.length+' 頁</div>'+
       '</div>'+
-      '<div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;">'+
-        '<span style="font-size:11px;background:#eef4ff;padding:4px 10px;border-radius:4px;border-left:3px solid #1565c0;color:#1565c0;">發放日 A（底薪日）：底薪 + 加項 + 職稱加給 − 勞健保 − 退休金</span>'+
-        '<span style="font-size:11px;background:#eefaf5;padding:4px 10px;border-radius:4px;border-left:3px solid #1a7a45;color:#1a7a45;">發放日 B（獎金日）：業績獎金 + 專案獎金 − 補充保費</span>'+
+      '<div style="display:flex;gap:10px;margin-bottom:8px;">'+
+        '<span style="font-size:13px;background:#ddeaff;padding:4px 12px;border-radius:4px;border-left:3px solid #1565c0;color:#1145a0;">📅 發放日 A（底薪日）：底薪 + 加項 + 職稱加給 − 勞健保 − 退休金</span>'+
+        '<span style="font-size:13px;background:#d5f0e2;padding:4px 12px;border-radius:4px;border-left:3px solid #1a7a45;color:#1a7a45;">🎯 發放日 B（獎金日）：業績獎金 + 專案獎金 − 補充保費</span>'+
       '</div>'+
       '<table style="width:100%;border-collapse:collapse;">'+
-      '<thead>'+colHeaders+'</thead>'+
-      '<tbody>'+pg.map(r=>printRow(r,false)).join('')+
-      (pi===pages.length-1?('<tr><td colspan="16" style="height:2px;background:#c9a84c;padding:0;"></td></tr>'+printRow(tot,true)):'')+'</tbody></table>'+
+        '<thead>'+colHeaders+'</thead>'+
+        '<tbody>'+pg.map(r=>printRow(r,false)).join('')+
+        (pi===pages.length-1?printRow(tot,true):'')+'</tbody>'+
+      '</table>'+
       (pi===pages.length-1?
-        '<div style="margin-top:16px;display:flex;gap:20px;flex-wrap:wrap;">'+
-          '<div style="font-size:11px;background:#eef4ff;padding:8px 14px;border-radius:6px;border-left:3px solid #1565c0;"><b>發放日 A 總計：$'+fmt(tot.payA_net)+'</b></div>'+
-          '<div style="font-size:11px;background:#eefaf5;padding:8px 14px;border-radius:6px;border-left:3px solid #1a7a45;"><b>發放日 B 總計：$'+fmt(tot.payB_net)+'</b></div>'+
-          '<div style="font-size:11px;background:#fffbee;padding:8px 14px;border-radius:6px;border-left:3px solid #b8860b;"><b>本月總支出：$'+fmt(tot.netTotal)+'</b></div>'+
-          '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:40px;width:100%;padding-top:12px;">'+
-            '<div style="border-top:1px solid #bbb;padding-top:8px;font-size:11px;color:#888;">會計確認</div>'+
-            '<div style="border-top:1px solid #bbb;padding-top:8px;font-size:11px;color:#888;">主管核准</div>'+
+        '<div style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">'+
+          '<div style="font-size:14px;background:#ddeaff;padding:10px 18px;border-radius:6px;border-left:4px solid #1565c0;"><b>發放日 A 總計：$'+fmt(tot.payA_net)+'</b></div>'+
+          '<div style="font-size:14px;background:#d5f0e2;padding:10px 18px;border-radius:6px;border-left:4px solid #1a7a45;"><b>發放日 B 總計：$'+fmt(tot.payB_net)+'</b></div>'+
+          '<div style="font-size:14px;background:#fff0a0;padding:10px 18px;border-radius:6px;border-left:4px solid #b8860b;"><b>本月總支出：$'+fmt(tot.netTotal)+'</b></div>'+
+          '<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:60px;width:100%;padding-top:16px;">'+
+            '<div style="border-top:1.5px solid #999;padding-top:10px;font-size:13px;color:#555;">會計確認</div>'+
+            '<div style="border-top:1.5px solid #999;padding-top:10px;font-size:13px;color:#555;">主管核准</div>'+
           '</div>'+
         '</div>'
       :'')+
     '</div>';
   });
 
-  const w=window.open('','_blank','width=1200,height=800');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>全員薪資總表 '+yr+'年'+mo+'月</title><style>body{font-family:serif;padding:24px;color:#111;}@media print{@page{size:A3 landscape;margin:12mm;}body{padding:0;}}</style></head><body>'+bodyHTML+'</body></html>');
+  const w=window.open('','_blank','width=1400,height=900');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>全員薪資總表 '+yr+'年'+mo+'月</title><style>*{box-sizing:border-box;}body{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;padding:20px;color:#111;font-size:13px;}table{font-variant-numeric:tabular-nums;}@media print{@page{size:A3 landscape;margin:10mm;}body{padding:0;}}</style></head><body>'+bodyHTML+'</body></html>');
   w.document.close();setTimeout(()=>w.print(),700);
 }
 
