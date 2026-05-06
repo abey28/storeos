@@ -4,6 +4,13 @@
 
 ---
 
+## v2.8.0 — 2026-05-06（重構）
+
+- **Item D — 拆分 JS/CSS 模組**：將原本單一 `index.html`（~3200 行）拆分為獨立模組：`css/app.css`、`js/utils.js`、`js/state.js`、`js/api.js`、`js/payroll.js`、`js/router.js`、各頁面模組（`js/pages/*.js`）及 `js/app.js`。`index.html` 僅保留 HTML 結構，所有樣式與邏輯移至外部檔案。
+- **Item C — r.staff 改用 staffId**：`r.staff` 陣列元素由字串改為 `{id, name}` 物件，新增 `rsName(e)` / `rsId(e)` 相容舊格式的輔助函式；`saveRecord`、`saveEditRecord`、`distributeBonusForRecord` 等所有相關邏輯同步更新。
+- **Item B — XSS 防護**：所有 `innerHTML` 拼接中涉及使用者資料（員工姓名、編號、門市、備註、專案名稱等）均套用 `escapeHtml()` 防護；`option value`、`data-*` 屬性亦同步處理。
+- **Item A — 備份同步**：`exportBackup()` 版本字串改為 `v2.8.0`，備份資料加入 `insuranceBrackets`；`importBackup()` 新增 `insuranceBrackets` 還原邏輯；`saveAll()` 補上 `insuranceBrackets` 的儲存呼叫。
+
 ## v2.7.0 — 2026-05-06（重大更新）
 
 - 新增「保費級距表」設定頁面：可依年度管理勞保、健保投保薪資級距表，資料儲存於 Cloudflare KV（鍵 `insuranceBrackets`），支援新增年度、刪除列、儲存、恢復預設等操作。

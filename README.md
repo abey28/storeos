@@ -2,7 +2,7 @@
 
 專為 THE food co. 同興三間門市（台北車站、中山誠品、松菸誠品）打造的內部管理系統，涵蓋日常營業額登記、業績與專案獎金自動計算、月報表、薪資單列印、員工／門市／班別／保費級距設定，以及完整的稽核日誌與分析儀表板。
 
-目前版本：**v2.7.0**（詳見 [CHANGELOG.md](./CHANGELOG.md)）。
+目前版本：**v2.8.0**（詳見 [CHANGELOG.md](./CHANGELOG.md)）。
 
 ---
 
@@ -30,7 +30,7 @@
 
 | 層級          | 技術                                                              |
 | ------------- | ----------------------------------------------------------------- |
-| 前端          | 單檔 HTML SPA（`index.html`），純 JS + CSS，無 build step         |
+| 前端          | HTML SPA（`index.html` + 模組化 JS/CSS），純 JS，無 build step   |
 | 後端 API      | Cloudflare Pages Functions（Node 風格 Fetch API）                 |
 | 資料儲存      | Cloudflare KV（binding：`STOREOS_KV`）                            |
 | 身分驗證      | Cloudflare Zero Trust Access（使用者信箱經由 request header 取得）|
@@ -46,7 +46,26 @@ StoreOS_project/
 ├── CHANGELOG.md           # 版本歷程（與 index.html 內建 changelog 頁同步）
 ├── README.md              # 本檔
 ├── public/                # 靜態資源（pages_build_output_dir 指向此處）
-│   └── index.html         # 主前端 SPA，所有頁面、樣式、互動邏輯
+│   ├── index.html         # 主前端 SPA（僅 HTML 結構，無 style/script 內容）
+│   ├── css/
+│   │   └── app.css        # 全域樣式（從 index.html 抽出）
+│   └── js/
+│       ├── utils.js       # fmt, showToast, escapeHtml, rsName, rsId 等工具函式
+│       ├── state.js       # 全域變數與常數（staff, records, insuranceBrackets 等）
+│       ├── api.js         # loadAllData, saveAll, saveKey, logAction 等 API 層
+│       ├── payroll.js     # getLIEntry, getNHIEntry, distributeBonusForRecord, calcStaffPaySummary
+│       ├── router.js      # goto, TITLES, calcTierBonus, calcOTWage, toggleTheme
+│       ├── app.js         # init, exportBackup, importBackup
+│       └── pages/
+│           ├── dashboard.js  renderDashboard 及儀表板相關函式
+│           ├── record.js     initRecord, saveRecord 等登記頁面函式
+│           ├── history.js    renderHistory, editRecord, exportCSV 等
+│           ├── bonus.js      calcBonus, printBonus
+│           ├── report.js     renderReport, exportReportCSV, printReport
+│           ├── payslip.js    initPayslip, generatePayslip, generatePaySummary 等
+│           ├── staff.js      renderStaff, saveStaff, updateStaff 等
+│           ├── settings.js   renderTiers, renderShifts, initBracketsPage 等
+│           └── logs.js       initLogsPage, renderLogs, exportLogsCSV
 └── functions/             # Cloudflare Pages Functions（檔案路徑 = 路由）
     └── api/
         ├── data.js        → GET  /api/data    讀取全部核心資料（含 insuranceBrackets）
