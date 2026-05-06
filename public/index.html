@@ -216,6 +216,7 @@ tr:last-child td{border-bottom:none;}
     <button class="nav-btn" onclick="goto('rules')"><span class="icon">⚙️</span><span class="label">業績獎金規則</span></button>
     <button class="nav-btn" onclick="goto('projtypes')"><span class="icon">🎯</span><span class="label">彈性專案獎金</span></button>
     <button class="nav-btn" onclick="goto('shifts')"><span class="icon">🕐</span><span class="label">班別薪資設定</span></button>
+    <button class="nav-btn" onclick="goto('brackets')"><span class="icon">📋</span><span class="label">保費級距表</span></button>
     <span class="nav-sep">系統資訊</span>
     <button class="nav-btn" onclick="goto('logs')"><span class="icon">🛡️</span><span class="label">操作紀錄</span></button>
     <button class="nav-btn" onclick="goto('help')"><span class="icon">📖</span><span class="label">使用說明</span></button>
@@ -228,7 +229,7 @@ tr:last-child td{border-bottom:none;}
     <div class="topbar-title" id="topbar-title">總覽儀表板</div>
     <div class="topbar-right"><span id="user-badge">—</span>
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">🌙 暗色模式</button>
-      <span class="ver-badge" id="ver-badge">v2.6.3</span>
+      <span class="ver-badge" id="ver-badge">v2.7.0</span>
       <span class="today-badge" id="today-badge"></span>
     </div>
   </div>
@@ -576,6 +577,41 @@ tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+    <!-- BRACKETS -->
+    <div class="page" id="page-brackets">
+      <div class="card">
+        <div class="card-title">📋 勞健保投保薪資級距表</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.9;">
+          管理各年度的投保薪資級距與員工應負擔金額，薪資單及薪資總表自動參照。<br>
+          <span style="color:var(--gold-dim)">查詢邏輯：以設定薪資「向上取最近級距」（ceiling lookup）。健保最低 $29,500，低於此值自動上修並說明。</span>
+        </div>
+        <div class="month-row" style="margin-bottom:20px;">
+          <label>年度：</label>
+          <select id="bracket-year-sel" onchange="renderBracketTables()" style="width:auto;"></select>
+          <button class="btn btn-ghost btn-sm" onclick="addBracketYear()">＋ 新增年度</button>
+          <button class="btn btn-danger btn-sm" id="bracket-del-btn" onclick="deleteBracketYear()">刪除此年度</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+          <div>
+            <div class="card-title" style="margin-bottom:8px;">🔵 勞保（員工負擔）</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">最低 $11,100，最高 $45,800</div>
+            <div id="li-bracket-wrap"></div>
+            <button class="btn btn-ghost btn-sm" onclick="addBracketRow('li')" style="margin-top:10px;">＋ 新增級距</button>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:8px;">🟢 健保（員工負擔）</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">最低 $29,500（低於此值自動上修），最高 $313,000</div>
+            <div id="nhi-bracket-wrap"></div>
+            <button class="btn btn-ghost btn-sm" onclick="addBracketRow('nhi')" style="margin-top:10px;">＋ 新增級距</button>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:10px;border-top:1px solid var(--border);padding-top:16px;">
+          <button class="btn btn-primary" onclick="saveBrackets()">💾 儲存級距表</button>
+          <button class="btn btn-ghost" onclick="resetBracketsToDefault()">↺ 重置此年度為內建預設</button>
+        </div>
+      </div>
+    </div>
+
     <!-- LOGS -->
     <div class="page" id="page-logs">
       <div class="card">
@@ -753,8 +789,23 @@ tr:last-child td{border-bottom:none;}
 
         <div class="cl-item">
           <div class="cl-header">
-            <span class="cl-ver">v2.6.3</span>
-            <span class="cl-tag">功能更新</span>
+            <span class="cl-ver">v2.7.0</span>
+            <span class="cl-tag">重大更新</span>
+          </div>
+          <ul class="cl-list">
+            <li>新增「保費級距表」設定頁：可依年度管理勞保、健保投保薪資級距與員工應負擔金額，支援新增年度、重置為預設、儲存至雲端</li>
+            <li>2026 級距資料全面修正：依官方「2026 年勞健保保費及勞退提繳三合一費用對照表」更新，修正部分工時中段級距（19,047、20,008、21,009、22,000、23,100、25,250 等），員工負擔金額改用表格實際數值，消除公式四捨五入尾差</li>
+            <li>級距查詢邏輯改為 ceiling lookup：以設定薪資「向上取最近級距」；例：設定 23,100 → 套用 23,100 欄（員工負擔 577），設定 23,101 → 套用 24,000 欄（員工負擔 600）</li>
+            <li>健保投保薪資最低限額修正為 $29,500（法定最低），低於此值時自動上修並在薪資單顯示「⚠ 自動上修」說明；移除 v2.6.1 錯誤加入的健保低薪級距（11,100–28,590）</li>
+            <li>修正補充保費計算 Bug：原條件「無勞保且無健保」才扣補充保費，修正為「無健保」即應計算（與勞保投保狀態無關）；修正邱其芹等有勞保但無健保之員工未被扣補充保費的問題</li>
+            <li>全員薪資總表同步採用新級距查詢邏輯，確保薪資單與總表數字一致</li>
+          </ul>
+        </div>
+
+        <div class="cl-item">
+          <div class="cl-header">
+            <span class="cl-ver">v2.7.0</span>
+            <span class="cl-tag">功能更新（原 v2.6.3）</span>
           </div>
           <ul class="cl-list">
             <li>薪資單新增「當月在職異動」折疊設定：員工中途到職或離職時，勾選後填入到職日／離職日，系統依台灣法規自動計算勞健保</li>
@@ -1077,6 +1128,7 @@ async function loadAllData(){
     tiers=d.tiers||[{threshold:5000,bonus:200},{threshold:10000,bonus:500},{threshold:14000,bonus:700}];
     projTypes=d.projTypes||[];
     shifts=d.shifts||{'台北車站':[{name:'全天班',hours:8,hourlyRate:175}],'中山誠品':[{name:'全天班',hours:8,hourlyRate:175}],'松菸誠品':[{name:'全天班',hours:8,hourlyRate:175}]};
+    if(d.insuranceBrackets){insuranceBrackets={...DEFAULT_INSURANCE_BRACKETS,...d.insuranceBrackets};}
   }catch(e){console.error('載入失敗:',e);showToast('⚠ 無法連線至伺服器，請重新整理頁面');}
 }
 function saveKey(key,data){
@@ -1174,14 +1226,14 @@ function calcOTWage(hourlyRate,hours,isDouble){
 }
 function activeProjTypes(month){return projTypes.filter(pt=>{if(!pt.active)return false;if(pt.from&&month<pt.from)return false;if(pt.to&&month>pt.to)return false;return true;});}
 
-const TITLES={dashboard:'總覽儀表板',record:'營業額登記',history:'歷史紀錄',bonus:'個人薪資試算',report:'月報表',payslip:'薪資單列印',staff:'員工資料',rules:'業績獎金規則',projtypes:'彈性專案獎金',shifts:'班別薪資設定',logs:'操作紀錄',help:'使用說明',changelog:'版本修訂記錄'};
+const TITLES={dashboard:'總覽儀表板',record:'營業額登記',history:'歷史紀錄',bonus:'個人薪資試算',report:'月報表',payslip:'薪資單列印',staff:'員工資料',rules:'業績獎金規則',projtypes:'彈性專案獎金',shifts:'班別薪資設定',brackets:'保費級距表',logs:'操作紀錄',help:'使用說明',changelog:'版本修訂記錄'};
 function goto(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>{if(b.getAttribute('onclick')==="goto('"+page+"')")b.classList.add('active');});
   document.getElementById('topbar-title').textContent=TITLES[page]||page;
-  const fns={dashboard:renderDashboard,record:initRecord,history:renderHistory,bonus:calcBonus,report:renderReport,payslip:initPayslip,staff:renderStaff,rules:renderTiers,projtypes:renderProjTypes,shifts:renderShifts,logs:initLogsPage,help:function(){},changelog:function(){}};
+  const fns={dashboard:renderDashboard,record:initRecord,history:renderHistory,bonus:calcBonus,report:renderReport,payslip:initPayslip,staff:renderStaff,rules:renderTiers,projtypes:renderProjTypes,shifts:renderShifts,brackets:initBracketsPage,logs:initLogsPage,help:function(){},changelog:function(){}};
   if(fns[page])fns[page]();
 }
 
@@ -2071,6 +2123,87 @@ function printReport(){
   printTable('月報表 '+month,['日期','門市','員工','營業額','業績獎金','專案獎金','每人合計'],rows);
 }
 
+/* ══ 保費級距表管理 ══ */
+function initBracketsPage(){
+  const sel=document.getElementById('bracket-year-sel');
+  const years=Object.keys(insuranceBrackets).sort().reverse();
+  sel.innerHTML=years.map(y=>'<option value="'+y+'">'+y+' 年</option>').join('');
+  renderBracketTables();
+}
+function renderBracketTables(){
+  const year=document.getElementById('bracket-year-sel').value;
+  const data=insuranceBrackets[year]||(insuranceBrackets[year]=JSON.parse(JSON.stringify(DEFAULT_INSURANCE_BRACKETS['2026'])));
+  renderOneBracketTable('li',data.li,'li-bracket-wrap');
+  renderOneBracketTable('nhi',data.nhi,'nhi-bracket-wrap');
+  document.getElementById('bracket-del-btn').disabled=Object.keys(insuranceBrackets).length<=1;
+}
+function renderOneBracketTable(type,rows,wrapId){
+  const el=document.getElementById(wrapId);if(!el)return;
+  let html='<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+    '<thead><tr>'+
+    '<th style="padding:6px 8px;text-align:left;color:var(--gold);font-size:10px;letter-spacing:1px;border-bottom:1px solid var(--border);">投保薪資</th>'+
+    '<th style="padding:6px 8px;text-align:right;color:var(--gold);font-size:10px;letter-spacing:1px;border-bottom:1px solid var(--border);">員工負擔</th>'+
+    '<th style="width:28px;border-bottom:1px solid var(--border);"></th></tr></thead><tbody>';
+  rows.forEach((r,i)=>{
+    html+='<tr>'+
+      '<td style="padding:3px 6px;"><input type="number" value="'+r.salary+'" min="0" onchange="updateBracketCell(\''+type+'\','+i+',\'salary\',this.value)" style="width:100px;"></td>'+
+      '<td style="padding:3px 6px;text-align:right;"><input type="number" value="'+r.emp+'" min="0" onchange="updateBracketCell(\''+type+'\','+i+',\'emp\',this.value)" style="width:80px;text-align:right;"></td>'+
+      '<td style="padding:3px 4px;"><button onclick="deleteBracketRow(\''+type+'\','+i+')" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:16px;line-height:1;">×</button></td>'+
+      '</tr>';
+  });
+  el.innerHTML=html+'</tbody></table>';
+}
+function getBracketYear(){return document.getElementById('bracket-year-sel').value;}
+function updateBracketCell(type,idx,field,val){
+  const year=getBracketYear();
+  insuranceBrackets[year][type][idx][field]=Number(val);
+}
+function deleteBracketRow(type,idx){
+  const year=getBracketYear();
+  insuranceBrackets[year][type].splice(idx,1);
+  renderBracketTables();
+}
+function addBracketRow(type){
+  const year=getBracketYear();
+  insuranceBrackets[year][type].push({salary:0,emp:0});
+  renderBracketTables();
+}
+function addBracketYear(){
+  const yr=prompt('請輸入年度（例：2027）');
+  if(!yr||!/^\d{4}$/.test(yr.trim())){showToast('請輸入4位數年度');return;}
+  if(insuranceBrackets[yr.trim()]){showToast('此年度已存在');return;}
+  insuranceBrackets[yr.trim()]=JSON.parse(JSON.stringify(DEFAULT_INSURANCE_BRACKETS['2026']));
+  initBracketsPage();
+  document.getElementById('bracket-year-sel').value=yr.trim();
+  renderBracketTables();
+}
+function deleteBracketYear(){
+  const year=getBracketYear();
+  if(Object.keys(insuranceBrackets).length<=1){showToast('至少保留一個年度');return;}
+  if(!confirm('確定刪除 '+year+' 年度的級距表？此操作儲存後生效。'))return;
+  delete insuranceBrackets[year];
+  initBracketsPage();
+}
+function saveBrackets(){
+  const year=getBracketYear();
+  // 儲存前排序
+  Object.values(insuranceBrackets).forEach(yr=>{
+    yr.li.sort((a,b)=>a.salary-b.salary);
+    yr.nhi.sort((a,b)=>a.salary-b.salary);
+  });
+  saveKey('insuranceBrackets',insuranceBrackets);
+  renderBracketTables();
+  showToast('✅ 級距表已儲存');
+  logAction('更新保費級距表','年度：'+year);
+}
+function resetBracketsToDefault(){
+  const year=getBracketYear();
+  if(!confirm('確定將 '+year+' 年度重置為內建預設值？（尚未儲存）'))return;
+  insuranceBrackets[year]=JSON.parse(JSON.stringify(DEFAULT_INSURANCE_BRACKETS['2026']));
+  renderBracketTables();
+  showToast('已重置（尚未儲存，請按「儲存級距表」）');
+}
+
 function initPayslip(){
   document.getElementById('ps-staff').innerHTML='<option value="">請選擇員工</option>'+staff.map(s=>'<option value="'+s.name+'">'+s.name+'（'+s.id+'）</option>').join('');
   document.getElementById('ps-month').value=thisMonth();
@@ -2105,124 +2238,65 @@ function updatePsChangeHint(){
   }
   document.getElementById('ps-change-hint').innerHTML=hints.join('<br>')||'<span style="color:var(--text-muted)">請輸入到職日或離職日</span>';
 }
-/* ── 2026 台灣勞保投保薪資級距表（員工負擔：12.5% × 20% = 2.5%） ── */
-/* 含部分工時（兼職）級距，最低 11,100 起 */
-const LI_BRACKETS=[
-  // 部分工時級距
-  {min:0,    max:11100, ins:11100},
-  {min:11101,max:12540, ins:12540},
-  {min:12541,max:13500, ins:13500},
-  {min:13501,max:15840, ins:15840},
-  {min:15841,max:16500, ins:16500},
-  {min:16501,max:17280, ins:17280},
-  {min:17281,max:17880, ins:17880},
-  {min:17881,max:18780, ins:18780},
-  {min:18781,max:19200, ins:19200},
-  {min:19201,max:20100, ins:20100},
-  {min:20101,max:21000, ins:21000},
-  {min:21001,max:21900, ins:21900},
-  {min:21901,max:22800, ins:22800},
-  {min:22801,max:24000, ins:24000},
-  {min:24001,max:25200, ins:25200},
-  // 全職級距（≥ 基本工資）
-  {min:25201,max:26400, ins:26400},
-  {min:26401,max:27600, ins:27600},
-  {min:27601,max:28800, ins:28800},
-  {min:28801,max:30300, ins:30300},
-  {min:30301,max:31800, ins:31800},
-  {min:31801,max:33300, ins:33300},
-  {min:33301,max:34800, ins:34800},
-  {min:34801,max:36300, ins:36300},
-  {min:36301,max:38200, ins:38200},
-  {min:38201,max:40100, ins:40100},
-  {min:40101,max:42000, ins:42000},
-  {min:42001,max:43900, ins:43900},
-  {min:43901,max:45800, ins:45800},
-  {min:45801,max:48200, ins:48200},
-  {min:48201,max:50600, ins:50600},
-  {min:50601,max:53000, ins:53000},
-  {min:53001,max:55400, ins:55400},
-  {min:55401,max:57800, ins:57800},
-  {min:57801,max:60800, ins:60800},
-  {min:60801,max:63800, ins:63800},
-  {min:63801,max:66800, ins:66800},
-  {min:66801,max:69800, ins:69800},
-  {min:69801,max:72800, ins:72800},
-  {min:72801,max:76500, ins:76500},
-  {min:76501,max:80200, ins:80200},
-  {min:80201,max:87600, ins:87600},
-  {min:87601,max:98800, ins:98800},
-  {min:98801,max:110100,ins:110100},
-  {min:110101,max:182000,ins:182000},
-];
-/* 2026 健保投保金額級距（員工負擔：5.17% × 30%） */
-/* 含部分工時（兼職）級距，最低 11,100 起 */
-const NHI_BRACKETS=[
-  // 部分工時級距
-  {min:0,    max:11100, ins:11100},
-  {min:11101,max:12540, ins:12540},
-  {min:12541,max:13500, ins:13500},
-  {min:13501,max:15840, ins:15840},
-  {min:15841,max:16500, ins:16500},
-  {min:16501,max:17280, ins:17280},
-  {min:17281,max:17880, ins:17880},
-  {min:17881,max:18780, ins:18780},
-  {min:18781,max:19200, ins:19200},
-  {min:19201,max:20100, ins:20100},
-  {min:20101,max:21000, ins:21000},
-  {min:21001,max:21900, ins:21900},
-  {min:21901,max:22800, ins:22800},
-  {min:22801,max:24000, ins:24000},
-  {min:24001,max:25200, ins:25200},
-  {min:25201,max:26400, ins:26400},
-  // 全職級距（≥ 基本工資）
-  {min:26401,max:27470, ins:27470},
-  {min:27471,max:28800, ins:28800},
-  {min:28801,max:30300, ins:30300},
-  {min:30301,max:31800, ins:31800},
-  {min:31801,max:33300, ins:33300},
-  {min:33301,max:34800, ins:34800},
-  {min:34801,max:36300, ins:36300},
-  {min:36301,max:38200, ins:38200},
-  {min:38201,max:40100, ins:40100},
-  {min:40101,max:42000, ins:42000},
-  {min:42001,max:43900, ins:43900},
-  {min:43901,max:45800, ins:45800},
-  {min:45801,max:48200, ins:48200},
-  {min:48201,max:50600, ins:50600},
-  {min:50601,max:53000, ins:53000},
-  {min:53001,max:55400, ins:55400},
-  {min:55401,max:57800, ins:57800},
-  {min:57801,max:60800, ins:60800},
-  {min:60801,max:63800, ins:63800},
-  {min:63801,max:66800, ins:66800},
-  {min:66801,max:69800, ins:69800},
-  {min:69801,max:72800, ins:72800},
-  {min:72801,max:76500, ins:76500},
-  {min:76501,max:80200, ins:80200},
-  {min:80201,max:83900, ins:83900},
-  {min:83901,max:87600, ins:87600},
-  {min:87601,max:92400, ins:92400},
-  {min:92401,max:97200, ins:97200},
-  {min:97201,max:102000,ins:102000},
-  {min:102001,max:107000,ins:107000},
-  {min:107001,max:182000,ins:182000},
-];
-function getLIBracket(salary){
-  for(const b of LI_BRACKETS){if(salary<=b.max)return b.ins;}
-  return 182000;
+/* ══════════════════════════════════════════════════════
+   勞健保投保薪資級距表（依年度管理，可於「保費級距」設定頁更新）
+   資料來源：2026年勞健保保費及勞退提繳三合一費用對照參考用表
+   查詢邏輯：ceiling lookup — 找第一個 salary ≥ 輸入值的級距
+   健保最低投保級距：$29,500（低於此值自動上修）
+   勞保最高：$45,800；健保最高：$313,000
+══════════════════════════════════════════════════════ */
+const NHI_MIN=29500; // 健保最低投保薪資
+const DEFAULT_INSURANCE_BRACKETS={
+  '2026':{
+    li:[
+      {salary:11100,emp:277},{salary:12540,emp:313},{salary:13500,emp:338},
+      {salary:15840,emp:396},{salary:16500,emp:413},{salary:17280,emp:432},
+      {salary:17880,emp:447},{salary:19047,emp:476},{salary:20008,emp:500},
+      {salary:21009,emp:525},{salary:22000,emp:550},{salary:23100,emp:577},
+      {salary:24000,emp:600},{salary:25250,emp:632},{salary:26400,emp:660},
+      {salary:27600,emp:690},{salary:28590,emp:715},{salary:29500,emp:738},
+      {salary:30300,emp:758},{salary:31800,emp:795},{salary:33300,emp:833},
+      {salary:34800,emp:870},{salary:36300,emp:908},{salary:38200,emp:955},
+      {salary:40100,emp:1002},{salary:42000,emp:1050},{salary:43900,emp:1098},
+      {salary:45800,emp:1145}
+    ],
+    nhi:[
+      {salary:29500,emp:458},{salary:30300,emp:470},{salary:31800,emp:493},
+      {salary:33300,emp:516},{salary:34800,emp:540},{salary:36300,emp:563},
+      {salary:38200,emp:592},{salary:40100,emp:622},{salary:42000,emp:651},
+      {salary:43900,emp:681},{salary:45800,emp:710},{salary:48200,emp:748},
+      {salary:50600,emp:785},{salary:53000,emp:822},{salary:55400,emp:859},
+      {salary:57800,emp:896},{salary:60800,emp:943},{salary:63800,emp:990},
+      {salary:66800,emp:1036},{salary:69800,emp:1083},{salary:72800,emp:1129},
+      {salary:76500,emp:1187},{salary:80200,emp:1244},{salary:83900,emp:1301},
+      {salary:87600,emp:1359},{salary:92100,emp:1428},{salary:96600,emp:1498},
+      {salary:101100,emp:1568},{salary:105600,emp:1638},{salary:110100,emp:1708},
+      {salary:115500,emp:1791},{salary:120900,emp:1875},{salary:126300,emp:1959},
+      {salary:131700,emp:2043},{salary:137100,emp:2126},{salary:142500,emp:2210},
+      {salary:147900,emp:2294},{salary:150000,emp:2327},{salary:156400,emp:2426},
+      {salary:162800,emp:2525},{salary:169200,emp:2624},{salary:175600,emp:2724},
+      {salary:182000,emp:2823},{salary:189500,emp:2939},{salary:197000,emp:3055},
+      {salary:204500,emp:3172},{salary:212000,emp:3288},{salary:219500,emp:3404},
+      {salary:228200,emp:3539},{salary:236900,emp:3674},{salary:245600,emp:3809},
+      {salary:254300,emp:3944},{salary:263000,emp:4079},{salary:273000,emp:4234},
+      {salary:283000,emp:4389},{salary:293000,emp:4544},{salary:303000,emp:4700},
+      {salary:313000,emp:4855}
+    ]
+  }
+};
+// 執行期級距表：初始值為內建預設，loadAllData 後可由 KV 覆蓋
+let insuranceBrackets=JSON.parse(JSON.stringify(DEFAULT_INSURANCE_BRACKETS));
+
+/* 勞保查詢：ceiling lookup（找第一個 salary ≥ 輸入值的級距）*/
+function getLIEntry(salary,year){
+  const tbl=(insuranceBrackets[year]||DEFAULT_INSURANCE_BRACKETS['2026']).li;
+  return tbl.find(b=>b.salary>=salary)||tbl[tbl.length-1];
 }
-function getNHIBracket(salary){
-  for(const b of NHI_BRACKETS){if(salary<=b.max)return b.ins;}
-  return 182000;
-}
-/* 依投保薪資計算員工應負擔勞保費（2.4%）與健保費（1.551%） */
-function calcInsurance(insuredAmt){
-  const liBase=getLIBracket(insuredAmt);
-  const nhiBase=getNHIBracket(insuredAmt);
-  const li=Math.round(liBase*0.125*0.2);   // 勞保率12.5%，員工負擔20%
-  const nhi=Math.round(nhiBase*0.0517*0.3); // 健保費率5.17%，員工負擔30%
-  return{li,nhi,liBase,nhiBase};
+/* 健保查詢：ceiling lookup，自動下限 NHI_MIN */
+function getNHIEntry(salary,year){
+  const eff=Math.max(salary,NHI_MIN);
+  const tbl=(insuranceBrackets[year]||DEFAULT_INSURANCE_BRACKETS['2026']).nhi;
+  return tbl.find(b=>b.salary>=eff)||tbl[tbl.length-1];
 }
 const WEEKDAYS=['日','一','二','三','四','五','六'];
 function dateWithWeekday(dateStr){
@@ -2287,31 +2361,35 @@ function generatePayslip(){
 
   // ── 勞保 ──
   if(liInsured&&liInsuredAmt>0){
-    liBase=getLIBracket(liInsuredAmt);
-    const liFullMonth=Math.round(liBase*0.125*0.2);
+    const liEntry=getLIEntry(liInsuredAmt,psYr.toString());
+    liBase=liEntry.salary;
+    const liFullMonth=liEntry.emp;
     liDeduct=isPartialLI?Math.round(liFullMonth*liInsuredDays/totalDaysInMonth):liFullMonth;
     const liDayNote=isPartialLI?' × '+liInsuredDays+'/'+totalDaysInMonth+' 天（依法比例計算）':'';
-    deductLines.push({label:'勞保費（員工負擔）',amt:liDeduct,note:'投保薪資級距 $'+fmt(liBase)+' × 12.5% × 20%'+liDayNote});
+    deductLines.push({label:'勞保費（員工負擔）',amt:liDeduct,note:'投保薪資級距 $'+fmt(liBase)+'，員工負擔 $'+fmt(liFullMonth)+liDayNote});
   }
 
   // ── 健保 ──
   if(nhiInsured&&nhiInsuredAmt>0){
+    const nhiEffAmt=Math.max(nhiInsuredAmt,NHI_MIN);
+    const nhiCorrected=nhiInsuredAmt<NHI_MIN;
     if(nhiSkip){
-      // 月中離職：健保不扣，僅記錄說明
       deductLines.push({label:'健保費（員工負擔）',amt:0,note:'月中離職（'+leaveDay+' 日，非月底）— 依《全民健康保險法》不扣，由退保次日起轉由新單位或地區人口接續投保',skip:true});
     } else {
-      nhiBase=getNHIBracket(nhiInsuredAmt);
+      const nhiEntry=getNHIEntry(nhiEffAmt,psYr.toString());
+      nhiBase=nhiEntry.salary;
       const reduceMulti=Math.max(0,1-(nhiReduce/100));
       const depMulti=1+nhiDep;
-      nhiDeduct=Math.round(nhiBase*0.0517*0.3*depMulti*reduceMulti);
+      nhiDeduct=Math.round(nhiEntry.emp*depMulti*reduceMulti);
       const depNote=nhiDep>0?'×(1+'+nhiDep+'眷)':'';
       const reduceNote=nhiReduce>0?'×(1-'+nhiReduce+'%)':'';
       const joinNote=joinDay?'（當月第 '+joinDay+' 日到職，健保整月計算）':'';
       const lastDayNote=(leaveDay&&leaveDay===totalDaysInMonth)?'（月底離職，健保整月計算）':'';
-      deductLines.push({label:'健保費（員工負擔）',amt:nhiDeduct,note:'投保薪資級距 $'+fmt(nhiBase)+' × 5.17% × 30%'+depNote+reduceNote+(joinNote||lastDayNote)});
+      const corrNote=nhiCorrected?'；設定薪資 $'+fmt(nhiInsuredAmt)+' 低於最低投保級距 $'+fmt(NHI_MIN)+'，自動上修':'';
+      deductLines.push({label:'健保費（員工負擔）'+(nhiCorrected?' ⚠':''),amt:nhiDeduct,note:'投保薪資級距 $'+fmt(nhiBase)+'，員工負擔 $'+fmt(nhiEntry.emp)+depNote+reduceNote+(joinNote||lastDayNote)+corrNote});
 
       // 有投保健保：獎金超過投保薪資4倍補充保費
-      const bonusCap=nhiInsuredAmt*4;
+      const bonusCap=nhiEffAmt*4;
       if(grossBonus>bonusCap){
         const sp=Math.round((grossBonus-bonusCap)*0.0211);
         suppPremium+=sp;
@@ -2320,10 +2398,10 @@ function generatePayslip(){
     }
   }
 
-  // ── 未投保（無勞保且無健保）：兼職所得補充保費 ──
-  // 規定：單次發放本薪或獎金各自超過 $29,500 才扣；分開判斷
+  // ── 未投保健保：兼職所得補充保費 ──
+  // 規定：未投保健保者，底薪或獎金各自超過 $29,500 才扣（與勞保無關）
   const partTimeNote=[];
-  if(!liInsured&&!nhiInsured){
+  if(!nhiInsured){
     if(tWage>SUPP_BASE){
       const sp=Math.round(tWage*0.0211);
       suppPremium+=sp;
@@ -2341,8 +2419,8 @@ function generatePayslip(){
 
   const totalDeductIns=liDeduct+nhiDeduct+suppPremium;
   // 薪資單附註（未投保、有補充保費時顯示）
-  const partTimeSplitNote=(!liInsured&&!nhiInsured&&partTimeNote.length>0)?
-    '⚠ 未投保兼職人員：底薪與獎金將分不同日期發放，各自超過 $'+fmt(SUPP_BASE)+' 時依 2.11% 計算補充保費。':'';
+  const partTimeSplitNote=(!nhiInsured&&partTimeNote.length>0)?
+    '⚠ 未投保健保人員：底薪與獎金將分不同日期發放，各自超過 $'+fmt(SUPP_BASE)+' 時依 2.11% 計算補充保費。':'';
 
   // 員工自提勞工退休金（薪資減項）
   const selfRetire=se.selfRetire||false;
@@ -2498,18 +2576,19 @@ function calcStaffPaySummary(sname, month){
   const SUPP_BASE=29500;
   let liDeduct=0,nhiDeduct=0,suppBonusPremium=0,selfRetireAmt=0,suppWagePremium=0;
 
+  const calcYr=month.split('-')[0];
   if(liInsured&&liInsuredAmt>0){
-    const liBase=getLIBracket(liInsuredAmt);
-    liDeduct=Math.round(liBase*0.125*0.2);
+    liDeduct=getLIEntry(liInsuredAmt,calcYr).emp;
   }
   if(nhiInsured&&nhiInsuredAmt>0){
-    const nhiBase=getNHIBracket(nhiInsuredAmt);
+    const nhiEffAmt=Math.max(nhiInsuredAmt,NHI_MIN);
+    const nhiEntry=getNHIEntry(nhiEffAmt,calcYr);
     const reduceMulti=Math.max(0,1-(nhiReduce/100));
-    nhiDeduct=Math.round(nhiBase*0.0517*0.3*(1+nhiDep)*reduceMulti);
-    const bonusCap=nhiInsuredAmt*4;
+    nhiDeduct=Math.round(nhiEntry.emp*(1+nhiDep)*reduceMulti);
+    const bonusCap=nhiEffAmt*4;
     if(grossBonus>bonusCap)suppBonusPremium=Math.round((grossBonus-bonusCap)*0.0211);
   }
-  if(!liInsured&&!nhiInsured){
+  if(!nhiInsured){
     if(tWage>SUPP_BASE)suppWagePremium=Math.round(tWage*0.0211);
     if(grossBonus>SUPP_BASE)suppBonusPremium=Math.round(grossBonus*0.0211);
   }
@@ -3049,7 +3128,7 @@ function importBackup(event){
 async function init(){
   const d=new Date(),z=n=>String(n).padStart(2,'0');
   document.getElementById('today-badge').textContent=d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate());
-  document.getElementById('ver-badge').textContent='v2.6.3';
+  document.getElementById('ver-badge').textContent='v2.7.0';
   ['hist-month','bon-month','rpt-month'].forEach(id=>document.getElementById(id).value=thisMonth());
   try{const saved=localStorage.getItem('themeMode');if(saved==='light'){document.body.classList.add('light-mode');document.getElementById('theme-toggle-btn').textContent='🌙 暗色模式';}}catch(e){}
   await loadAllData();await loadUserInfo();

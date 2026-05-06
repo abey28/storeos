@@ -1,11 +1,12 @@
 export async function onRequestGet({ env }) {
   try {
-    const [staff, records, tiers, projTypes, shifts] = await Promise.all([
+    const [staff, records, tiers, projTypes, shifts, insuranceBrackets] = await Promise.all([
       env.STOREOS_KV.get('staff', 'json'),
       env.STOREOS_KV.get('records', 'json'),
       env.STOREOS_KV.get('tiers', 'json'),
       env.STOREOS_KV.get('projTypes', 'json'),
       env.STOREOS_KV.get('shifts', 'json'),
+      env.STOREOS_KV.get('insuranceBrackets', 'json'),
     ]);
     return Response.json({
       staff: staff || [],
@@ -21,6 +22,7 @@ export async function onRequestGet({ env }) {
         中山誠品: [{ name: '全天班', hours: 8, hourlyRate: 175 }],
         松菸誠品: [{ name: '全天班', hours: 8, hourlyRate: 175 }],
       },
+      insuranceBrackets: insuranceBrackets || null,
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
