@@ -606,6 +606,19 @@
 
         <div class="cl-item">
           <div class="cl-header">
+            <span class="cl-ver">v2.8.0</span>
+            <span class="cl-tag">重構</span>
+          </div>
+          <ul class="cl-list">
+            <li>程式碼模組化：將原本單一 index.html（約 3,200 行）拆分為獨立檔案，包含 css/app.css、js/utils.js、js/state.js、js/api.js、js/payroll.js、js/router.js、各頁面模組（js/pages/*.js）及 js/app.js；index.html 僅保留 HTML 結構，提升可維護性</li>
+            <li>記帳紀錄改用員工 ID 關聯：r.staff 陣列元素由純字串（姓名）改為 {id, name} 物件，name 保留為快照（改名或離職後歷史紀錄仍顯示當時姓名，不受影響）；新增 rsName() / rsId() 相容舊格式的輔助函式</li>
+            <li>XSS 防護：所有 innerHTML 拼接中涉及使用者資料（員工姓名、編號、門市名稱、備註、專案名稱等）均套用 escapeHtml() 防護；option value 與 data-* 屬性一併處理</li>
+            <li>備份版本同步：匯出備份版本字串更新為 v2.8.0；備份資料加入 insuranceBrackets；匯入備份時同步還原保費級距表設定</li>
+          </ul>
+        </div>
+
+        <div class="cl-item">
+          <div class="cl-header">
             <span class="cl-ver">v2.7.0</span>
             <span class="cl-tag">重大更新</span>
           </div>
