@@ -24,7 +24,7 @@ async function loadAllData(){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const d=await res.json();
     staff=d.staff||[];records=d.records||[];
-    tiers=d.tiers||[{threshold:5000,bonus:200},{threshold:10000,bonus:500},{threshold:14000,bonus:700}];
+    tiers=normalizeTiers(d.tiers||[{threshold:5000,bonus:200},{threshold:10000,bonus:500},{threshold:14000,bonus:700}]);
     projTypes=d.projTypes||[];
     shifts=d.shifts||{'台北車站':[{name:'全天班',hours:8,hourlyRate:175}],'中山誠品':[{name:'全天班',hours:8,hourlyRate:175}],'松菸誠品':[{name:'全天班',hours:8,hourlyRate:175}]};
     if(d.insuranceBrackets){insuranceBrackets={...DEFAULT_INSURANCE_BRACKETS,...d.insuranceBrackets};}
@@ -81,7 +81,7 @@ function startAutoRefresh(){
   setInterval(async()=>{
     if(Object.keys(_saveQueue).length>0)return;
     try{const res=await fetch(API+'/data');if(!res.ok)return;const d=await res.json();
-      staff=d.staff||staff;records=d.records||records;tiers=d.tiers||tiers;
+      staff=d.staff||staff;records=d.records||records;tiers=d.tiers?normalizeTiers(d.tiers):tiers;
       projTypes=d.projTypes||projTypes;shifts=d.shifts||shifts;setSyncOk();
     }catch(e){setSyncDot('');}
   },30000);

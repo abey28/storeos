@@ -12,11 +12,29 @@ function getNHIEntry(salary,year){
   return tbl.find(b=>b.salary>=eff)||tbl[tbl.length-1];
 }
 
-/* ── 實習生感知業績獎金分配 ──
- * 邏輯：獎金池先扣實習生例外金額，剩餘由正職依工時比例分配。
- * staffArr 傳入當前 staff 陣列以判斷 isIntern。
+/* ── 每人業績獎金計算（v2.9.0 新制核心）──
+ * 不分池：每人依「紀錄門市 + 自身身分（正式/新進）」查表，各領全額。
+ * 實習生不查表（預設 0），可由 overrides 給例外金額。
+ * staffEntries: [{id,name}] 或舊格式字串陣列；overrides: {姓名:金額}
+ */
+function computeBonusPerPerson(sales,store,staffEntries,staffArr,overrides){
+  const result={};
+  (staffEntries||[]).forEach(entry=>{
+    const name=rsName(entry),id=rsId(entry);
+    const s=staffArr.find(x=>(id&&x.id===id)||x.name===name);
+    if(s&&s.isIntern){result[name]=Number((overrides||{})[name])||0;}
+    else{result[name]=calcTierBonusFor(sales,store,(s&&s.isNewbie)?'newbie':'regular');}
+  });
+  return result;
+}
+
+/* ── 業績獎金分配（雙軌）──
+ * v2.9+ 新紀錄：儲存當下已快照每人獎金於 r.bonusData，直接回傳（歷史凍結）。
+ * 舊紀錄（無 bonusData）：維持原獎金池邏輯——池先扣實習生例外金額，
+ * 剩餘由正職依工時比例分配。staffArr 傳入當前 staff 陣列以判斷 isIntern。
  */
 function distributeBonusForRecord(r,staffArr){
+  if(r.bonusData)return {...r.bonusData};
   const pool=r.totalBonus||0;
   const overrides=r.bonusOverride||{};
   // 計算實習生例外金額總和（只計入實際被標記為實習生者）

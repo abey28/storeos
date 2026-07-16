@@ -4,6 +4,16 @@
 
 ---
 
+## v2.9.0 — 2026-07-16（重大更新）
+
+- **分門市 × 分身分業績獎金制度**：`tiers` 改為新結構 `{default:{regular,newbie},stores:{門市名:{regular,newbie}}}`。每間門市可建立專屬規則表（未建立者沿用「預設規則」）；正式人員與 🆕 新進人員各有獨立門檻／獎金表，新進表空白時自動沿用正式表。舊陣列格式於載入 KV／匯入備份時經 `normalizeTiers()` 自動遷移，完全向後相容。
+- **分配語意改變（各自查表領全額）**：多人同班不再分獎金池——每人依「該紀錄門市 ＋ 自身身分」查表各領全額（`calcTierBonusFor` / `computeBonusPerPerson`）；🎓 實習生維持不查表（預設 $0），可用 `bonusOverride` 例外金額覆蓋。
+- **歷史凍結（bonusData 快照）**：新紀錄儲存當下將每人業績獎金快照存入 `r.bonusData`，`r.totalBonus` 改為每人合計（儀表板成本統計沿用）；`distributeBonusForRecord()` 改為雙軌——有 `bonusData` 直接回傳快照，舊紀錄（無 bonusData）維持原獎金池 × 工時比例邏輯，歷史薪資不變。編輯舊紀錄（`saveEditRecord`）後以新制重算並轉為快照。
+- **員工新進標記**：員工主檔新增 `isNewbie` 欄位；新增／修訂表單皆可勾選「🆕 新進人員」，員工名單與記帳頁員工選取器顯示 🆕 badge。
+- **業績獎金設定頁改版**：頂部門市選擇列（預設規則 ＋ 各門市按鈕，已設定專屬規則者標示 ●、未設定顯示「沿用預設」）；未設定門市可一鍵「建立專屬規則」（複製預設為起點），已設定者可「刪除專屬規則」改回沿用預設（需確認）；正式與新進兩張階梯表獨立編輯、即時預覽。
+- **/api/save 後端強化**：新增 KV key 白名單（`staff` / `records` / `tiers` / `projTypes` / `shifts` / `insuranceBrackets`，其他 key 回 400）與基本型別檢查（陣列／物件；tiers 過渡期同時接受舊陣列格式）；寫入成功後自動寫入一筆稽核 log 至 KV `logs`（action=`API寫入:key`，user 取 Cloudflare Access 信箱，detail 為資料筆數摘要），與前端 logAction 並存。
+- **顯示層同步**：記帳即時預覽逐人標示身分（正式／🆕 新進／🎓 實習生）與各自查表金額，移除獎金池分配呈現；儀表板最新紀錄對新紀錄標示「依身分查表」；使用說明頁同步更新新制說明。
+
 ## v2.8.0 — 2026-05-06（重構）
 
 - **Item D — 拆分 JS/CSS 模組**：將原本單一 `index.html`（~3200 行）拆分為獨立模組：`css/app.css`、`js/utils.js`、`js/state.js`、`js/api.js`、`js/payroll.js`、`js/router.js`、各頁面模組（`js/pages/*.js`）及 `js/app.js`。`index.html` 僅保留 HTML 結構，所有樣式與邏輯移至外部檔案。

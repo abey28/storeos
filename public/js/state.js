@@ -1,6 +1,9 @@
 /* ── 全域狀態變數 ── */
 const API='/api';
-let staff=[],records=[],tiers=[],projTypes=[],shifts={};
+let staff=[],records=[],projTypes=[],shifts={};
+// tiers（v2.9.0 新格式）：分門市、分身分（正式 regular / 新進 newbie）階梯表
+// default 為預設規則；stores 內有門市 key 者代表該門市已設定專屬規則
+let tiers={default:{regular:[{threshold:5000,bonus:200},{threshold:10000,bonus:500},{threshold:14000,bonus:700}],newbie:[]},stores:{}};
 let logs=[],logsTotal=0;
 let currentUser='訪客';
 let _saveQueue={};

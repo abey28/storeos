@@ -1,5 +1,22 @@
 /* ── 路由 / 共用工具 ── */
-function calcTierBonus(sales){const s=[...tiers].sort((a,b)=>b.threshold-a.threshold);for(const t of s){if(sales>=t.threshold)return t.bonus;}return 0;}
+/* ── 業績獎金查表（v2.9.0：分門市 × 分身分）──
+ * getTierTable：取得某門市某身分適用的階梯表。
+ *   - 門市未設定專屬規則時沿用 tiers.default
+ *   - category==='newbie' 且新進表為空時沿用 regular 表
+ */
+function getTierTable(store,category){
+  const cfg=(tiers.stores&&tiers.stores[store])||tiers.default||{};
+  if(category==='newbie'&&cfg.newbie&&cfg.newbie.length)return cfg.newbie;
+  return cfg.regular||[];
+}
+/* 單人查表：取最高符合門檻的獎金（全額，不分池） */
+function calcTierBonusFor(sales,store,category){
+  const tbl=[...getTierTable(store,category)].sort((a,b)=>b.threshold-a.threshold);
+  for(const t of tbl){if(sales>=t.threshold)return t.bonus;}
+  return 0;
+}
+/* 舊 API 相容包裝：以預設表（正式人員）計算，僅供殘留呼叫兼容 */
+function calcTierBonus(sales){return calcTierBonusFor(sales,null,'regular');}
 function calcOTWage(hourlyRate,hours,isDouble){
   const r=hourlyRate||0;
   let w=0;

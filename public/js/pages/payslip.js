@@ -169,7 +169,6 @@ function generatePayslip(){
   // 雇主退休金提撥（6%，雇主全額負擔，僅供參考，不列入薪資減項）
   const retireRef=liInsured&&liInsuredAmt>0?Math.round(liInsuredAmt*0.06):0;
 
-  const tierNote=[...tiers].sort((a,b)=>a.threshold-b.threshold).map(t=>'$'+fmt(t.threshold)+'→$'+t.bonus+'元').join(' ／ ');
   const parts=month.split('-'),yr=parts[0],mo=parts[1];
 
   // ── 出班明細列 ──

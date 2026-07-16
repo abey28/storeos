@@ -281,7 +281,7 @@ function renderDashboard(){
   document.getElementById('dash-tbody').innerHTML=sorted.map(r=>{
     const hc=r.staff.length||1;
     const totalHours=r.wageData?r.staff.reduce((s,entry)=>{const n=rsName(entry);return s+(r.wageData[n]?r.wageData[n].hours||0:0);},0):0;
-    const avgSB=totalHours>0?'依工時比例':('÷'+hc);
+    const avgSB=r.bonusData?'依身分查表':(totalHours>0?'依工時比例':('÷'+hc));
     return '<tr><td><span style="font-family:DM Mono;font-size:12px">'+r.date+'</span></td><td><span class="dot" style="background:'+sc(r.store)+'"></span>'+escapeHtml(r.store)+'</td><td>'+r.staff.map(e=>escapeHtml(rsName(e))).join('、')+'</td><td style="font-family:DM Mono;color:var(--gold-light)">$'+fmt(r.sales)+'</td><td style="font-family:DM Mono;color:#82e0aa">$'+fmt(r.totalBonus||0)+'<span style="font-size:9px;color:var(--text-muted);margin-left:3px;">'+avgSB+'</span></td><td style="font-family:DM Mono;color:#bb8fce">$'+fmt(Math.round((r.totalProjBonus||0)/hc))+'</td></tr>';
   }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px">尚無紀錄</td></tr>';
 }

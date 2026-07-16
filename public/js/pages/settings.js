@@ -1,24 +1,120 @@
 /* ══════════════════════════════════════════════════════
    設定（業績獎金規則 / 彈性專案 / 班別 / 保費級距）
 ══════════════════════════════════════════════════════ */
+/* ── 業績獎金規則（v2.9.0：分門市 × 分身分）──
+ * _tierStore=null 代表編輯「預設規則」；為門市名稱時編輯該門市專屬規則。
+ */
+let _tierStore=null;
+function currentTierCfg(){
+  if(_tierStore===null)return tiers.default;
+  return (tiers.stores&&tiers.stores[_tierStore])||null;
+}
+function selectTierStore(store){_tierStore=store;renderTiers();}
 function renderTiers(){
-  document.getElementById('tier-list').innerHTML=[...tiers].sort((a,b)=>a.threshold-b.threshold).map((t,i)=>'<div class="tier-row"><input type="number" class="t-th" value="'+t.threshold+'" min="0" placeholder="門檻金額" oninput="previewTiers()"><input type="number" class="t-bo" value="'+t.bonus+'" min="0" placeholder="獎金額" oninput="previewTiers()"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')">✕</button></div>').join('');
+  // 門市選擇列
+  const stores=getStores();
+  if(_tierStore!==null&&!stores.includes(_tierStore))_tierStore=null;
+  let bar='<button class="btn '+(_tierStore===null?'btn-primary':'btn-ghost')+' btn-sm" onclick="selectTierStore(null)">預設規則</button>';
+  stores.forEach(s=>{
+    const hasOwn=!!(tiers.stores&&tiers.stores[s]);
+    bar+='<button class="btn '+(_tierStore===s?'btn-primary':'btn-ghost')+' btn-sm" onclick="selectTierStore(\''+escapeHtml(s)+'\')">'+(hasOwn?'<span style="color:var(--gold);">●</span> ':'')+escapeHtml(s)+(hasOwn?'':' <span style="font-size:9px;color:var(--text-muted);">(沿用預設)</span>')+'</button>';
+  });
+  document.getElementById('tier-store-bar').innerHTML=bar;
+  const editWrap=document.getElementById('tier-edit-wrap');
+  const noRuleWrap=document.getElementById('tier-norule-wrap');
+  const cfg=currentTierCfg();
+  if(!cfg){
+    // 此門市尚無專屬規則
+    editWrap.style.display='none';noRuleWrap.style.display='';
+    document.getElementById('tier-norule-msg').textContent='「'+_tierStore+'」目前沿用預設規則。若此門市需要不同的門檻／獎金，可建立專屬規則（以預設規則複製為起點）。';
+    document.getElementById('tier-preview').innerHTML='';
+    return;
+  }
+  noRuleWrap.style.display='none';editWrap.style.display='';
+  document.getElementById('tier-edit-title').textContent=_tierStore===null?'📋 預設規則（未建立專屬規則的門市一律適用）':'🏪 「'+_tierStore+'」專屬規則';
+  document.getElementById('tier-del-store-btn').style.display=_tierStore===null?'none':'';
+  renderTierTable('regular',cfg.regular||[]);
+  renderTierTable('newbie',cfg.newbie||[]);
   previewTiers();
 }
-function addTier(){const maxT=tiers.length?Math.max(...tiers.map(t=>t.threshold)):0;tiers.push({threshold:maxT+5000,bonus:0});tiers.sort((a,b)=>a.threshold-b.threshold);renderTiers();}
-function removeTier(i){tiers.splice(i,1);renderTiers();}
+function renderTierTable(cat,rows){
+  const el=document.getElementById('tier-list-'+cat);
+  const sorted=[...rows].sort((a,b)=>a.threshold-b.threshold);
+  el.innerHTML=sorted.map((t,i)=>'<div class="tier-row"><input type="number" class="t-th" value="'+t.threshold+'" min="0" placeholder="門檻金額" oninput="previewTiers()"><input type="number" class="t-bo" value="'+t.bonus+'" min="0" placeholder="獎金額" oninput="previewTiers()"><button class="btn btn-danger btn-sm" onclick="removeTier(\''+cat+'\','+i+')">✕</button></div>').join('')
+    ||(cat==='newbie'
+      ?'<div style="font-size:11px;color:var(--text-muted);padding:8px 2px;">未設定，將沿用正式人員表</div>'
+      :'<div style="font-size:11px;color:var(--text-muted);padding:8px 2px;">尚無階梯，請點「＋ 新增階梯」</div>');
+}
+/* 將 DOM 上的未儲存編輯寫回目前 cfg（供新增/刪除列時不遺失輸入） */
+function collectTierEdits(){
+  const cfg=currentTierCfg();if(!cfg)return;
+  ['regular','newbie'].forEach(cat=>{
+    const arr=[];
+    document.querySelectorAll('#tier-list-'+cat+' .tier-row').forEach(row=>{
+      const th=Number(row.querySelector('.t-th').value),bo=Number(row.querySelector('.t-bo').value);
+      if(th>0)arr.push({threshold:th,bonus:bo});
+    });
+    arr.sort((a,b)=>a.threshold-b.threshold);
+    cfg[cat]=arr;
+  });
+}
+function addTier(cat){
+  collectTierEdits();
+  const cfg=currentTierCfg();if(!cfg)return;
+  const arr=cfg[cat]||(cfg[cat]=[]);
+  const maxT=arr.length?Math.max(...arr.map(t=>t.threshold)):0;
+  arr.push({threshold:maxT+5000,bonus:0});
+  renderTiers();
+}
+function removeTier(cat,i){
+  collectTierEdits();
+  const cfg=currentTierCfg();if(!cfg||!cfg[cat])return;
+  cfg[cat].splice(i,1);
+  renderTiers();
+}
+function createStoreTierRules(){
+  if(_tierStore===null)return;
+  if(!tiers.stores)tiers.stores={};
+  tiers.stores[_tierStore]={
+    regular:JSON.parse(JSON.stringify(tiers.default.regular||[])),
+    newbie:JSON.parse(JSON.stringify(tiers.default.newbie||[]))
+  };
+  renderTiers();
+  showToast('已以預設規則為起點建立「'+_tierStore+'」專屬規則（調整後請按「儲存規則」）');
+}
+function deleteStoreTierRules(){
+  if(_tierStore===null||!(tiers.stores&&tiers.stores[_tierStore]))return;
+  if(!confirm('確定刪除「'+_tierStore+'」的專屬規則？\n刪除後此門市將改回沿用預設規則。'))return;
+  delete tiers.stores[_tierStore];
+  saveTiersKey();renderTiers();
+  logAction('刪除門市專屬獎金規則',_tierStore+'（改回沿用預設）');
+  showToast('✅ 已刪除，「'+_tierStore+'」改為沿用預設規則');
+}
 function saveTiers(){
-  tiers=[];document.querySelectorAll('#tier-list .tier-row').forEach(row=>{const th=Number(row.querySelector('.t-th').value),bo=Number(row.querySelector('.t-bo').value);if(th>0)tiers.push({threshold:th,bonus:bo});});
-  tiers.sort((a,b)=>a.threshold-b.threshold);saveTiersKey();renderTiers();
-  logAction('修改業績獎金規則',tiers.map(t=>'$'+fmt(t.threshold)+'→$'+t.bonus).join(' / '));
-  showToast('✅ 階梯規則已儲存');
+  collectTierEdits();
+  const cfg=currentTierCfg();if(!cfg)return;
+  saveTiersKey();renderTiers();
+  const scope=_tierStore===null?'預設規則':'門市:'+_tierStore;
+  const sum=(label,arr)=>label+':'+((arr&&arr.length)?arr.map(t=>'$'+fmt(t.threshold)+'→$'+t.bonus).join('/'):'沿用正式表');
+  logAction('修改業績獎金規則',scope+' '+sum('正式',cfg.regular)+' '+sum('新進',cfg.newbie));
+  showToast('✅ 階梯規則已儲存（'+(_tierStore===null?'預設規則':_tierStore)+'）');
 }
 function previewTiers(){
-  const temp=[];document.querySelectorAll('#tier-list .tier-row').forEach(row=>{const th=Number(row.querySelector('.t-th').value),bo=Number(row.querySelector('.t-bo').value);if(th>0)temp.push({threshold:th,bonus:bo});});temp.sort((a,b)=>a.threshold-b.threshold);
-  if(!temp.length){document.getElementById('tier-preview').innerHTML='';return;}
-  let html='<div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:10px;">規則預覽</div><div style="display:flex;flex-wrap:wrap;gap:8px;">';
-  temp.forEach((t,i)=>{const next=temp[i+1],range=next?'$'+fmt(t.threshold)+' ～ $'+fmt(next.threshold-1):'$'+fmt(t.threshold)+' 以上';html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px;">'+range+'</div><div style="font-family:DM Mono;color:var(--gold-light);">$'+fmt(t.bonus)+'</div></div>';});
-  document.getElementById('tier-preview').innerHTML=html+'</div>';
+  let html='';
+  [['regular','👔 正式人員'],['newbie','🆕 新進人員']].forEach(pair=>{
+    const cat=pair[0],label=pair[1];
+    const temp=[];
+    document.querySelectorAll('#tier-list-'+cat+' .tier-row').forEach(row=>{const th=Number(row.querySelector('.t-th').value),bo=Number(row.querySelector('.t-bo').value);if(th>0)temp.push({threshold:th,bonus:bo});});
+    temp.sort((a,b)=>a.threshold-b.threshold);
+    if(!temp.length){
+      if(cat==='newbie')html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">🆕 新進人員：未設定，沿用正式人員表</div>';
+      return;
+    }
+    html+='<div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:10px;">'+label+'規則預覽</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">';
+    temp.forEach((t,i)=>{const next=temp[i+1],range=next?'$'+fmt(t.threshold)+' ～ $'+fmt(next.threshold-1):'$'+fmt(t.threshold)+' 以上';html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px;">'+range+'</div><div style="font-family:DM Mono;color:var(--gold-light);">$'+fmt(t.bonus)+'</div></div>';});
+    html+='</div>';
+  });
+  document.getElementById('tier-preview').innerHTML=html;
 }
 
 function saveProjType(){

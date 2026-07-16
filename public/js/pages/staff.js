@@ -24,16 +24,19 @@ function saveStaff(){
     selfRetire:document.getElementById('sf-retire').checked,
     selfRetireRate:Math.min(6,Math.max(1,Number(document.getElementById('sf-retire-rate').value||1))),
     isIntern:document.getElementById('sf-intern').checked,
+    isNewbie:document.getElementById('sf-newbie').checked,
     // legacy compat
     insured:sfLI||sfNHI,
     insuredAmt:sfLI?Number(document.getElementById('sf-li-amt').value||0):(sfNHI?Number(document.getElementById('sf-nhi-amt').value||0):0),
   });
   const isInternNew=document.getElementById('sf-intern').checked;
-  logAction('新增員工',name+' ('+id+')'+(document.getElementById('sf-title').value.trim()?' 職稱:'+document.getElementById('sf-title').value.trim():'')+(isInternNew?' [實習生]':''));
-  saveStaffKey();renderStaff();showToast('✅ 已新增 '+name+(isInternNew?' 🎓 實習生':''));
+  const isNewbieNew=document.getElementById('sf-newbie').checked;
+  logAction('新增員工',name+' ('+id+')'+(document.getElementById('sf-title').value.trim()?' 職稱:'+document.getElementById('sf-title').value.trim():'')+(isInternNew?' [實習生]':'')+(isNewbieNew?' [新進]':''));
+  saveStaffKey();renderStaff();showToast('✅ 已新增 '+name+(isInternNew?' 🎓 實習生':'')+(isNewbieNew?' 🆕 新進':''));
   ['sf-name','sf-id','sf-phone','sf-email','sf-join','sf-title'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('sf-title-allowance').value='0';
   document.getElementById('sf-intern').checked=false;
+  document.getElementById('sf-newbie').checked=false;
   document.getElementById('sf-li').checked=false; sfToggleLI();
   document.getElementById('sf-nhi').checked=false; sfToggleNHI();
   document.getElementById('sf-retire').checked=false; sfToggleRetire();
@@ -81,8 +84,11 @@ function editStaff(id){
         <div><div class="form-label" style="margin-bottom:6px;">主要門市</div><select id="ed-store-${id}" style="width:100%;">${storeOpts}</select></div>
         <div><div class="form-label" style="margin-bottom:6px;">到職日</div><input type="date" id="ed-join-${id}" value="${s.join||''}" style="width:100%;"></div>
         <div><div class="form-label" style="margin-bottom:6px;">身分類型</div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);margin-bottom:6px;">
             <input type="checkbox" id="ed-intern-${id}" ${s.isIntern?'checked':''} style="width:auto;padding:0;background:transparent;border:none;"> 🎓 實習生
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);">
+            <input type="checkbox" id="ed-newbie-${id}" ${s.isNewbie?'checked':''} style="width:auto;padding:0;background:transparent;border:none;"> 🆕 新進人員
           </label>
         </div>
       </div>
@@ -145,6 +151,7 @@ function updateStaff(id){
   s.selfRetire=document.getElementById('ed-selfRetire-'+id)?.checked||false;
   s.selfRetireRate=Math.min(6,Math.max(1,Number(document.getElementById('ed-selfRetireRate-'+id)?.value||1)));
   s.isIntern=document.getElementById('ed-intern-'+id)?.checked||false;
+  s.isNewbie=document.getElementById('ed-newbie-'+id)?.checked||false;
   // legacy compat
   s.insured=s.liInsured||s.nhiInsured;
   s.insuredAmt=s.liAmt||s.nhiAmt||0;
@@ -155,5 +162,5 @@ function renderStaff(){
   const tbody=document.getElementById('staff-tbody'),empty=document.getElementById('staff-empty');
   if(!staff.length){tbody.innerHTML='';empty.style.display='';return;}
   empty.style.display='none';
-  tbody.innerHTML=staff.map(s=>'<tr data-sid="'+escapeHtml(s.id)+'"><td><span style="font-family:DM Mono;font-size:11px;color:var(--gold)">'+escapeHtml(s.id)+'</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:'+(s.isIntern?'#7f8c8d':'var(--gold)')+'">'+escapeHtml(s.name[0])+'</div>'+escapeHtml(s.name)+(s.isIntern?'<span style="font-size:10px;background:rgba(127,140,141,.15);color:#95a5a6;border:1px solid rgba(127,140,141,.3);border-radius:10px;padding:1px 7px;margin-left:5px;">🎓 實習</span>':'')+'</div></td><td style="font-size:12px;">'+(s.jobTitle?'<span class="badge badge-gold">'+escapeHtml(s.jobTitle)+'</span>'+(s.titleAllowance?'<br><span style="font-size:10px;color:var(--text-muted);font-family:DM Mono;">+$'+(s.titleAllowance||0)+'/月</span>':''):'<span style="color:var(--text-muted)">—</span>')+'</td><td style="font-family:DM Mono;font-size:12px">'+escapeHtml(s.phone||'—')+'</td><td style="font-size:12px;color:var(--text-muted)">'+escapeHtml(s.email||'—')+'</td><td><span class="badge badge-gold">'+escapeHtml(s.store)+'</span></td><td style="font-family:DM Mono;font-size:12px">'+(s.join||'—')+'</td><td style="font-size:12px;">'+(s.liInsured?'<span class="badge badge-green" style="font-size:10px;">勞$'+fmt(s.liAmt||0)+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">勞未保</span>')+' '+(s.nhiInsured?'<span class="badge badge-green" style="font-size:10px;">健$'+fmt(s.nhiAmt||0)+(s.nhiDep?'+'+s.nhiDep+'眷':'')+''+(s.nhiReduce?'-'+s.nhiReduce+'%':'')+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">健未保</span>')+(s.selfRetire?'<br><span class="badge badge-gold" style="font-size:10px;">自提'+s.selfRetireRate+'%</span>':'')+'</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editStaff(\''+escapeHtml(s.id)+'\')">修訂</button> <button class="btn btn-danger btn-sm" onclick="deleteStaff(\''+escapeHtml(s.id)+'\')">刪除</button></td></tr>').join('');
+  tbody.innerHTML=staff.map(s=>'<tr data-sid="'+escapeHtml(s.id)+'"><td><span style="font-family:DM Mono;font-size:11px;color:var(--gold)">'+escapeHtml(s.id)+'</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:'+(s.isIntern?'#7f8c8d':'var(--gold)')+'">'+escapeHtml(s.name[0])+'</div>'+escapeHtml(s.name)+(s.isIntern?'<span style="font-size:10px;background:rgba(127,140,141,.15);color:#95a5a6;border:1px solid rgba(127,140,141,.3);border-radius:10px;padding:1px 7px;margin-left:5px;">🎓 實習</span>':'')+(s.isNewbie?'<span style="font-size:10px;background:rgba(93,173,226,.15);color:#5dade2;border:1px solid rgba(93,173,226,.3);border-radius:10px;padding:1px 7px;margin-left:5px;">🆕 新進</span>':'')+'</div></td><td style="font-size:12px;">'+(s.jobTitle?'<span class="badge badge-gold">'+escapeHtml(s.jobTitle)+'</span>'+(s.titleAllowance?'<br><span style="font-size:10px;color:var(--text-muted);font-family:DM Mono;">+$'+(s.titleAllowance||0)+'/月</span>':''):'<span style="color:var(--text-muted)">—</span>')+'</td><td style="font-family:DM Mono;font-size:12px">'+escapeHtml(s.phone||'—')+'</td><td style="font-size:12px;color:var(--text-muted)">'+escapeHtml(s.email||'—')+'</td><td><span class="badge badge-gold">'+escapeHtml(s.store)+'</span></td><td style="font-family:DM Mono;font-size:12px">'+(s.join||'—')+'</td><td style="font-size:12px;">'+(s.liInsured?'<span class="badge badge-green" style="font-size:10px;">勞$'+fmt(s.liAmt||0)+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">勞未保</span>')+' '+(s.nhiInsured?'<span class="badge badge-green" style="font-size:10px;">健$'+fmt(s.nhiAmt||0)+(s.nhiDep?'+'+s.nhiDep+'眷':'')+''+(s.nhiReduce?'-'+s.nhiReduce+'%':'')+'</span>':'<span class="badge" style="font-size:10px;background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid rgba(192,57,43,.3);">健未保</span>')+(s.selfRetire?'<br><span class="badge badge-gold" style="font-size:10px;">自提'+s.selfRetireRate+'%</span>':'')+'</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editStaff(\''+escapeHtml(s.id)+'\')">修訂</button> <button class="btn btn-danger btn-sm" onclick="deleteStaff(\''+escapeHtml(s.id)+'\')">刪除</button></td></tr>').join('');
 }
