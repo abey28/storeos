@@ -12,19 +12,57 @@ function getNHIEntry(salary,year){
   return tbl.find(b=>b.salary>=eff)||tbl[tbl.length-1];
 }
 
-/* ── 每人業績獎金計算（v2.9.0 新制核心）──
- * 不分池：每人依「紀錄門市 + 自身身分（正式/新進）」查表，各領全額。
+/* ── 每人業績獎金計算（v2.10.0 新制核心）──
+ * 演算法（先均分 → 短工時打折 → 差額回填給整日者）：
+ *   1. 分母 hc = 當日(正式+新進)人數，實習生不計。
+ *   2. baseReg/baseNew = 依門市規則各自查表（正式表 / 新進表）。
+ *   3. 每人初始應得 = (該身分 base) ÷ hc。
+ *   4. 整日工時 = 當日非實習生中的最長工時。
+ *   5. 每人 weight = min(個人工時 ÷ 整日工時, 1)；打折後 = 初始 × weight。
+ *   6. 因打折被扣的差額總和，平均分給所有「整日者(weight=1)」。
+ *   7. 四捨五入後把餘差補在整日者，維持總額守恆。
+ *   若無有效工時資料（全 0/未填）→ 視為全員整日，純人數均分。
  * 實習生不查表（預設 0），可由 overrides 給例外金額。
- * staffEntries: [{id,name}] 或舊格式字串陣列；overrides: {姓名:金額}
+ * staffEntries: [{id,name}] 或舊格式字串陣列；wageData: {姓名:{hours,...}}
  */
-function computeBonusPerPerson(sales,store,staffEntries,staffArr,overrides){
+function computeBonusPerPerson(sales,store,staffEntries,staffArr,overrides,wageData){
+  overrides=overrides||{};wageData=wageData||{};
   const result={};
+  const eligible=[];
   (staffEntries||[]).forEach(entry=>{
     const name=rsName(entry),id=rsId(entry);
     const s=staffArr.find(x=>(id&&x.id===id)||x.name===name);
-    if(s&&s.isIntern){result[name]=Number((overrides||{})[name])||0;}
-    else{result[name]=calcTierBonusFor(sales,store,(s&&s.isNewbie)?'newbie':'regular');}
+    if(s&&s.isIntern){result[name]=Number(overrides[name])||0;return;}
+    const cat=(s&&s.isNewbie)?'newbie':'regular';
+    const hours=(wageData[name]&&Number(wageData[name].hours))||0;
+    eligible.push({name,cat,hours});
   });
+  const hc=eligible.length;
+  if(hc===0)return result;
+  const baseReg=calcTierBonusFor(sales,store,'regular');
+  const baseNew=calcTierBonusFor(sales,store,'newbie');
+  eligible.forEach(p=>{p.initial=(p.cat==='newbie'?baseNew:baseReg)/hc;});
+  const fullDay=Math.max(0,...eligible.map(p=>p.hours));
+  const useHours=fullDay>0;
+  let totalShortfall=0;
+  eligible.forEach(p=>{
+    const w=useHours?Math.min(p.hours/fullDay,1):1;
+    p.weight=w;p.adjusted=p.initial*w;
+    totalShortfall+=p.initial-p.adjusted;
+  });
+  const fullDayWorkers=eligible.filter(p=>p.weight>=1-1e-9);
+  const perFull=fullDayWorkers.length>0?totalShortfall/fullDayWorkers.length:0;
+  eligible.forEach(p=>{p.final=p.adjusted+((p.weight>=1-1e-9)?perFull:0);});
+  // 四捨五入 + 總額守恆（餘差補在整日者，依小數部分大小分配）
+  const target=Math.round(eligible.reduce((s,p)=>s+p.final,0));
+  eligible.forEach(p=>{p.rounded=Math.round(p.final);result[p.name]=p.rounded;});
+  let diff=target-eligible.reduce((s,p)=>s+p.rounded,0);
+  if(diff!==0){
+    const pool=(fullDayWorkers.length?fullDayWorkers:eligible)
+      .slice().sort((a,b)=>(b.final-Math.floor(b.final))-(a.final-Math.floor(a.final)));
+    const step=diff>0?1:-1;let n=Math.abs(diff),i=0;
+    while(n>0){result[pool[i%pool.length].name]+=step;i++;n--;}
+  }
   return result;
 }
 

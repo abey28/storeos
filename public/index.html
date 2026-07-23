@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>THE food co. 同興 — 門市管理系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=2.10.0">
 </head>
 <body>
 <div id="loading-overlay"><div class="loading-spinner"></div><div class="loading-msg">載入資料中...</div></div>
@@ -343,8 +343,8 @@
       <div class="card">
         <div class="card-title">⚙️ 業績獎金 — 階梯規則（分門市 × 分身分）</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.8;">
-          每人依「當日紀錄的門市 ＋ 自身身分（👔 正式／🆕 新進）」各自查表，取「最高符合門檻」對應獎金，<b>每人領全額、不再分池</b>。<br>
-          <span style="color:var(--gold-dim)">未建立專屬規則的門市沿用「預設規則」；新進人員表空白時沿用正式人員表；🎓 實習生不參與查表（可於記帳頁填例外金額）。舊紀錄仍依原獎金池邏輯顯示，不受影響。</span>
+          正式／🆕 新進各依「當日紀錄門市」規則查表得<b>基礎獎金</b>，再依<b>當日（正式＋新進）人數均分</b>；未上滿整日者按「實際工時 ÷ 當日最長工時」打折，差額回填給整日者。<br>
+          <span style="color:var(--gold-dim)">未建立專屬規則的門市沿用「預設規則」；新進人員表空白時沿用正式人員表；🎓 實習生不查表、不列入分配人數（可於記帳頁填例外金額）。舊紀錄仍依原邏輯顯示，不受影響。</span>
         </div>
         <div style="font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;">選擇規則範圍</div>
         <div id="tier-store-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;"></div>
@@ -521,9 +521,10 @@
             <li class="help-li">下方即時預覽顯示業績獎金、專案獎金及每人應得金額</li>
             <li class="help-li">同一門市同日重複登記時，系統會提示是否覆蓋</li>
           </ul>
-          <div class="help-tip">💡 業績獎金（v2.9 新制）：每人依「當日紀錄的門市 ＋ 自身身分（👔 正式／🆕 新進）」各自查表領全額，多人同班不再分池；專案獎金依各員工個人完成次數分別計算</div>
-          <div class="help-tip">🎓 若員工設為「實習生」，預設不參與業績獎金查表（$0）。登記當天如需給予實習生獎金，可在記帳頁面手動輸入金額（⚡例外覆蓋），其他員工的獎金不受影響</div>
-          <div class="help-tip">🗄️ 舊紀錄（v2.9 之前、無每人獎金快照者）仍依原「獎金池 × 工時比例分配」邏輯顯示，歷史薪資不變；v2.9 起的新紀錄在儲存當下即凍結每人獎金金額，日後修改規則表不影響既有紀錄</div>
+          <div class="help-tip">💡 業績獎金（v2.10 新制）：正式／🆕 新進各依「當日紀錄門市」規則查表得基礎額，再依當日（正式＋新進）人數均分；未上滿整日者按「實際工時 ÷ 當日最長工時」打折，差額回填給上滿整日者。專案獎金另依各員工個人完成次數分別計算</div>
+          <div class="help-tip">🧮 範例：業績 20,000（正式獎金 2,000／新進 1,000），正式上班 12h、新進上班 8h → 均分後正式 1,000、新進 500；新進打折 500×8÷12＝333，差額 167 回填正式 → 正式 1,167、新進 333</div>
+          <div class="help-tip">🎓 若員工設為「實習生」，預設不參與業績獎金查表（$0）、且不列入均分人數。登記當天如需給予實習生獎金，可在記帳頁面手動輸入金額（⚡例外覆蓋），其他員工的獎金不受影響</div>
+          <div class="help-tip">🗄️ 既有紀錄維持儲存當下的每人獎金快照凍結，歷史薪資不變；如需以新制重算某筆紀錄，重新編輯該筆即會套用最新公式</div>
 
           <div class="help-h4">③ 歷史紀錄</div>
           <ul class="help-ul">
@@ -607,9 +608,9 @@
             <li class="help-li">非等比計算，可自由設定任意門檻與對應獎金；系統以「最高符合的門檻」決定當日獎金金額</li>
             <li class="help-li">分身分：正式人員與 🆕 新進人員各有自己的門檻／獎金表；新進表空白時自動沿用正式人員表</li>
             <li class="help-li">分門市：每間門市可建立專屬規則表（以預設規則複製為起點）；未建立者一律沿用「預設規則」，也可隨時刪除專屬規則改回沿用預設</li>
-            <li class="help-li">分配語意：多人同班時每人依自身身分與該紀錄門市查表「各領全額」，不再分池；🎓 實習生不查表，可在記帳頁填例外金額</li>
-            <li class="help-li">例：設定 $5,000→$200、$10,000→$500，業績 $12,000 → 每位符合身分的員工各領 $500</li>
-            <li class="help-li">歷史凍結：新紀錄儲存當下即快照每人獎金；舊紀錄（無快照）仍依原獎金池 × 工時比例邏輯顯示，歷史薪資不變</li>
+            <li class="help-li">分配語意（v2.10）：正式／新進各依身分查表得基礎額 → 依當日（正式＋新進）人數均分 → 未上滿整日者按「實際工時 ÷ 當日最長工時」打折，差額回填給整日者；🎓 實習生不查表、不列入人數，可在記帳頁填例外金額</li>
+            <li class="help-li">例：業績 20,000（正式 2,000／新進 1,000），正式 12h＋新進 8h → 均分正式 1,000／新進 500 → 新進打折 333、差額 167 回填 → 正式 1,167、新進 333；若全員同工時則直接均分</li>
+            <li class="help-li">歷史凍結：新紀錄儲存當下即快照每人獎金，日後改規則不影響既有紀錄；重新編輯某筆紀錄會以最新公式重算</li>
             <li class="help-li">修改後務必點「儲存規則」，之後的新紀錄立即適用</li>
           </ul>
 
@@ -638,6 +639,20 @@
     <div class="page" id="page-changelog">
       <div class="card">
         <div class="card-title">🗒️ 版本修訂記錄</div>
+
+        <div class="cl-item">
+          <div class="cl-header">
+            <span class="cl-ver">v2.10.0</span>
+            <span class="cl-tag">獎金制度調整</span>
+          </div>
+          <ul class="cl-list">
+            <li>業績獎金計算改為「工時加權均分制」：正式／新進各依門市規則查表得基礎額後，先依當日（正式＋新進）人數均分；未上滿整日者按「實際工時 ÷ 當日最長工時」比例打折，因短工時被扣除的差額平均回填給當日上滿整日的人員。實習生不查表、不列入分配人數（可於記帳頁填例外金額）。</li>
+            <li>範例：當日業績 20,000（正式獎金 2,000／新進 1,000），1 位正式上班 12 小時、1 位新進上班 8 小時 → 均分後正式 1,000、新進 500；新進因工時打折為 500×8÷12＝333，差額 167 回填正式 → 正式最終 1,167、新進 333。</li>
+            <li>正式人員與新進人員的業績門檻及獎金金額完全獨立設定，不再共用同一組金額；修正新進人員門檻無法新增／儲存的問題。</li>
+            <li>新增靜態資源版本化（JS／CSS 檔尾帶版本參數），每次改版強制瀏覽器載入最新檔案，避免快取造成「已更新卻看似未生效」。</li>
+            <li>既有紀錄維持原快照凍結不受影響；如需套用新制，重新編輯該筆紀錄即會以新公式重算。</li>
+          </ul>
+        </div>
 
         <div class="cl-item">
           <div class="cl-header">
@@ -974,20 +989,20 @@
 <div id="toast"></div>
 
 
-<script src="js/utils.js"></script>
-<script src="js/state.js"></script>
-<script src="js/api.js"></script>
-<script src="js/payroll.js"></script>
-<script src="js/pages/dashboard.js"></script>
-<script src="js/pages/record.js"></script>
-<script src="js/pages/history.js"></script>
-<script src="js/pages/bonus.js"></script>
-<script src="js/pages/report.js"></script>
-<script src="js/pages/payslip.js"></script>
-<script src="js/pages/staff.js"></script>
-<script src="js/pages/settings.js"></script>
-<script src="js/pages/logs.js"></script>
-<script src="js/router.js"></script>
-<script src="js/app.js"></script>
+<script src="js/utils.js?v=2.10.0"></script>
+<script src="js/state.js?v=2.10.0"></script>
+<script src="js/api.js?v=2.10.0"></script>
+<script src="js/payroll.js?v=2.10.0"></script>
+<script src="js/pages/dashboard.js?v=2.10.0"></script>
+<script src="js/pages/record.js?v=2.10.0"></script>
+<script src="js/pages/history.js?v=2.10.0"></script>
+<script src="js/pages/bonus.js?v=2.10.0"></script>
+<script src="js/pages/report.js?v=2.10.0"></script>
+<script src="js/pages/payslip.js?v=2.10.0"></script>
+<script src="js/pages/staff.js?v=2.10.0"></script>
+<script src="js/pages/settings.js?v=2.10.0"></script>
+<script src="js/pages/logs.js?v=2.10.0"></script>
+<script src="js/router.js?v=2.10.0"></script>
+<script src="js/app.js?v=2.10.0"></script>
 </body>
 </html>

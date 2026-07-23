@@ -99,8 +99,8 @@ function saveEditRecord(ts){
     if(amt>0)newInternBonus[name]=amt;
   });
   r.bonusOverride=Object.keys(newInternBonus).length?newInternBonus:undefined;
-  // v2.9.0：編輯後以新制重算並快照每人業績獎金（編輯過的舊紀錄轉為新制快照）
-  r.bonusData=computeBonusPerPerson(r.sales,r.store,r.staff,staff,r.bonusOverride);
+  // v2.10.0：編輯後以新制重算並快照每人業績獎金（編輯過的舊紀錄轉為新制快照）
+  r.bonusData=computeBonusPerPerson(r.sales,r.store,r.staff,staff,r.bonusOverride,r.wageData);
   r.totalBonus=Object.values(r.bonusData).reduce((s,v)=>s+v,0);
   const hasOverride=r.bonusOverride&&Object.keys(r.bonusOverride).length>0;
   logAction('編輯營業額紀錄',r.date+' '+r.store+' 營業額$'+fmt(r.sales)+' 員工:'+r.staff.map(rsName).join('、')+(hasOverride?' [含實習生例外:'+Object.entries(r.bonusOverride).map(([n,v])=>n+'$'+v).join(',')+ ']':''));

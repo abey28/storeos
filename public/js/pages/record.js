@@ -249,12 +249,12 @@ function updateBonusPreview(){
   const sales=Number(document.getElementById('rec-sales').value)||0;
   const checked=getCheckedStaff();
   const internOD=getInternOverrideData();
-  // v2.9.0：每人依自身身分與本紀錄門市各自查表領全額（不分池）
+  const wd=getWageData();
+  // v2.10.0：每人依身分查表得基礎額 → 依人數均分 → 短工時打折、差額回填整日者
   const staffEntries=checked.map(name=>{const s=staff.find(x=>x.name===name);return s?{id:s.id,name}:{id:null,name};});
-  const bonusData=computeBonusPerPerson(sales,store,staffEntries,staff,internOD);
+  const bonusData=computeBonusPerPerson(sales,store,staffEntries,staff,internOD,wd);
   const sb=Object.values(bonusData).reduce((s,v)=>s+v,0);
   const pb=getTotalProjBonus(),perStaffPB=getPerStaffProjBonus();
-  const wd=getWageData();
   const el=document.getElementById('bonus-live');
   if(!sales&&!pb){el.innerHTML='<span style="color:var(--text-muted);font-size:13px">輸入營業額或專案數量後顯示預覽</span>';return;}
   const mt=[...getTierTable(store,'regular')].sort((a,b)=>b.threshold-a.threshold).find(t=>sales>=t.threshold);
@@ -266,14 +266,14 @@ function updateBonusPreview(){
   let html='<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px;">';
   html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">營業額</div><div style="font-family:DM Mono;font-size:20px;color:var(--gold-light)">$'+fmt(sales)+'</div><div style="font-size:10px;margin-top:2px;color:'+(mt?'var(--text-muted)':'var(--red)')+'">'+(mt?'達 $'+fmt(mt.threshold)+' 階梯':'未達門檻，無業績獎金')+'</div></div>';
   html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">本薪合計</div><div style="font-family:DM Mono;font-size:20px;color:#5dade2">$'+fmt(totalWage)+'</div></div>';
-  html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">業績獎金合計</div><div style="font-family:DM Mono;font-size:20px;color:#82e0aa">$'+fmt(sb)+'</div><div style="font-size:10px;margin-top:2px;color:var(--text-muted)">各自依身分查表領全額</div></div>';
+  html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">業績獎金合計</div><div style="font-family:DM Mono;font-size:20px;color:#82e0aa">$'+fmt(sb)+'</div><div style="font-size:10px;margin-top:2px;color:var(--text-muted)">依身分查表後按人數均分、短工時打折</div></div>';
   html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">專案獎金合計</div><div style="font-family:DM Mono;font-size:20px;color:#bb8fce">$'+fmt(pb)+'</div></div>';
   if(totalAllow>0){html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">加項合計</div><div style="font-family:DM Mono;font-size:20px;color:#f0b27a">+$'+fmt(totalAllow)+'</div></div>';}
   if(totalDeduct>0){html+='<div><div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px">扣款合計</div><div style="font-family:DM Mono;font-size:20px;color:var(--red)">-$'+fmt(totalDeduct)+'</div></div>';}
   html+='</div>';
   if(checked.length){
     html+='<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;">';
-    html+='<div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">業績獎金採各自依身分（正式／🆕新進／🎓實習生）與門市規則查表，每人領全額</div>';
+    html+='<div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">業績獎金：正式／🆕新進各依門市規則查表得基礎額 → 依當日（正式+新進）人數均分 → 未上滿整日者按工時打折，差額回填給整日者（🎓實習生不查表、不計入人數）</div>';
     checked.forEach(name=>{
       const sObj=staff.find(x=>x.name===name);
       const isInternFlag=!!(sObj&&sObj.isIntern);
@@ -318,8 +318,8 @@ function saveRecord(){
   const totalDeduct=Object.values(dd).reduce((s,d)=>s+(d.amt||0),0);
   const totalAllow=Object.values(ad).reduce((s,a)=>s+(a.amt||0),0);
   const bonusOverride=Object.keys(internBO).length?internBO:undefined;
-  // v2.9.0：儲存當下快照每人業績獎金（bonusData），歷史凍結；totalBonus 改為每人合計
-  const bonusData=computeBonusPerPerson(sales,store,staffList,staff,internBO);
+  // v2.10.0：儲存當下快照每人業績獎金（bonusData），歷史凍結；totalBonus 改為每人合計
+  const bonusData=computeBonusPerPerson(sales,store,staffList,staff,internBO,wd);
   const totalSB=Object.values(bonusData).reduce((s,v)=>s+v,0);
   records.push({date,store,sales,staff:staffList,totalBonus:totalSB,bonusData,totalProjBonus:totalPB,projEntries:flatEntries,projPerStaff:pe,wageData:wd,totalWage,deductData:dd,totalDeduct,allowanceData:ad,totalAllow,bonusOverride,doublePay,note,ts:Date.now()});
   saveRecordsKey();
