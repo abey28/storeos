@@ -8,4 +8,5 @@ Thumbs.db
 # 開發工具
 node_modules/
 .wrangler/
+.wrangler-state/
 .dev.vars
