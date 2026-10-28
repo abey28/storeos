@@ -25,7 +25,8 @@ function describeData(data) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    const { key, data } = await request.json();
+    const body = await request.json();
+    const { key, data } = body;
     if (!key) return Response.json({ error: 'missing key' }, { status: 400 });
     if (!ALLOWED_KEYS.includes(key)) {
       return Response.json({ error: 'key not allowed: ' + key }, { status: 400 });
@@ -41,21 +42,24 @@ export async function onRequestPost({ request, env }) {
     }
     await env.STOREOS_KV.put(key, JSON.stringify(data));
 
-    // 自動稽核 log（失敗不影響主寫入）
-    try {
-      const entry = {
-        ts: Date.now(),
-        user: getUserEmail(request) || '訪客',
-        action: 'API寫入:' + key,
-        detail: describeData(data),
-        ip: request.headers.get('cf-connecting-ip') || '',
-      };
-      const logs = (await env.STOREOS_KV.get('logs', 'json')) || [];
-      logs.unshift(entry);
-      if (logs.length > MAX_LOGS) logs.length = MAX_LOGS;
-      await env.STOREOS_KV.put('logs', JSON.stringify(logs));
-    } catch (e) {
-      /* 稽核寫入失敗靜默略過 */
+    // 自動稽核 log：僅對「非前端」的直接寫入（繞過前端者）補記，避免與前端 logAction
+    // 重複雙寫、浪費 KV 寫入額度。前端送 src:'app'（其操作已另由 logAction 記錄）。
+    if (body.src !== 'app') {
+      try {
+        const entry = {
+          ts: Date.now(),
+          user: getUserEmail(request) || '訪客',
+          action: 'API寫入:' + key,
+          detail: describeData(data),
+          ip: request.headers.get('cf-connecting-ip') || '',
+        };
+        const logs = (await env.STOREOS_KV.get('logs', 'json')) || [];
+        logs.unshift(entry);
+        if (logs.length > MAX_LOGS) logs.length = MAX_LOGS;
+        await env.STOREOS_KV.put('logs', JSON.stringify(logs));
+      } catch (e) {
+        /* 稽核寫入失敗靜默略過 */
+      }
     }
 
     return Response.json({ ok: true });

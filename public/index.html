@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>THE food co. 同興 — 門市管理系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=2.10.0">
+<link rel="stylesheet" href="css/app.css?v=2.10.1">
 </head>
 <body>
 <div id="loading-overlay"><div class="loading-spinner"></div><div class="loading-msg">載入資料中...</div></div>
@@ -642,6 +642,18 @@
 
         <div class="cl-item">
           <div class="cl-header">
+            <span class="cl-ver">v2.10.1</span>
+            <span class="cl-tag">用量優化</span>
+          </div>
+          <ul class="cl-list">
+            <li>大幅降低 Cloudflare KV 用量：營業額紀錄的新增／編輯／刪除改為只寫入變動的 <code>records</code> 一把 key（原本每次會連同員工、獎金規則、班別、保費級距等 6 把全部重寫）。單筆存檔的 KV 寫入由最多約 13 筆降至 2 筆。</li>
+            <li>稽核日誌不再重複雙寫：後端 <code>/api/save</code> 的自動稽核僅對「繞過前端的直接寫入」補記，前端正常操作沿用原本的 <code>logAction</code> 記錄一次即可（繞過前端仍會留下稽核紀錄，安全性不變）。</li>
+            <li>自動同步輪詢優化：分頁切到背景（沒人在看）時暫停輪詢，間隔由 30 秒放寬為 60 秒，切回分頁時自動補抓最新資料。大幅減少閒置分頁造成的 KV 讀取。</li>
+          </ul>
+        </div>
+
+        <div class="cl-item">
+          <div class="cl-header">
             <span class="cl-ver">v2.10.0</span>
             <span class="cl-tag">獎金制度調整</span>
           </div>
@@ -989,20 +1001,20 @@
 <div id="toast"></div>
 
 
-<script src="js/utils.js?v=2.10.0"></script>
-<script src="js/state.js?v=2.10.0"></script>
-<script src="js/api.js?v=2.10.0"></script>
-<script src="js/payroll.js?v=2.10.0"></script>
-<script src="js/pages/dashboard.js?v=2.10.0"></script>
-<script src="js/pages/record.js?v=2.10.0"></script>
-<script src="js/pages/history.js?v=2.10.0"></script>
-<script src="js/pages/bonus.js?v=2.10.0"></script>
-<script src="js/pages/report.js?v=2.10.0"></script>
-<script src="js/pages/payslip.js?v=2.10.0"></script>
-<script src="js/pages/staff.js?v=2.10.0"></script>
-<script src="js/pages/settings.js?v=2.10.0"></script>
-<script src="js/pages/logs.js?v=2.10.0"></script>
-<script src="js/router.js?v=2.10.0"></script>
-<script src="js/app.js?v=2.10.0"></script>
+<script src="js/utils.js?v=2.10.1"></script>
+<script src="js/state.js?v=2.10.1"></script>
+<script src="js/api.js?v=2.10.1"></script>
+<script src="js/payroll.js?v=2.10.1"></script>
+<script src="js/pages/dashboard.js?v=2.10.1"></script>
+<script src="js/pages/record.js?v=2.10.1"></script>
+<script src="js/pages/history.js?v=2.10.1"></script>
+<script src="js/pages/bonus.js?v=2.10.1"></script>
+<script src="js/pages/report.js?v=2.10.1"></script>
+<script src="js/pages/payslip.js?v=2.10.1"></script>
+<script src="js/pages/staff.js?v=2.10.1"></script>
+<script src="js/pages/settings.js?v=2.10.1"></script>
+<script src="js/pages/logs.js?v=2.10.1"></script>
+<script src="js/router.js?v=2.10.1"></script>
+<script src="js/app.js?v=2.10.1"></script>
 </body>
 </html>

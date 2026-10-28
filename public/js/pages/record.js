@@ -324,7 +324,7 @@ function saveRecord(){
   records.push({date,store,sales,staff:staffList,totalBonus:totalSB,bonusData,totalProjBonus:totalPB,projEntries:flatEntries,projPerStaff:pe,wageData:wd,totalWage,deductData:dd,totalDeduct,allowanceData:ad,totalAllow,bonusOverride,doublePay,note,ts:Date.now()});
   saveRecordsKey();
   logAction(dup?'編輯營業額紀錄':'新增營業額紀錄',date+' '+store+' 營業額$'+fmt(sales)+' 員工:'+staffList.map(rsName).join('、')+(doublePay?' (雙倍薪資)':'')+(bonusOverride&&Object.keys(bonusOverride).length?' [實習生例外:'+Object.entries(bonusOverride).map(([n,v])=>n+'$'+v).join(',')+']':''));
-  saveAll();showToast('✅ '+store+' '+date+' 已儲存'+(doublePay?' 🎉 雙倍薪資':''));
+  showToast('✅ '+store+' '+date+' 已儲存'+(doublePay?' 🎉 雙倍薪資':''));
   document.getElementById('rec-sales').value='';document.getElementById('rec-note').value='';
   document.getElementById('rec-double-pay').checked=false;
   const label=document.getElementById('double-pay-label');if(label)label.style.borderColor='';

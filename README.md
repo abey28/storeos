@@ -2,7 +2,7 @@
 
 專為 THE food co. 同興三間門市（台北車站、中山誠品、松菸誠品）打造的內部管理系統，涵蓋日常營業額登記、業績與專案獎金自動計算、月報表、薪資單列印、員工／門市／班別／保費級距設定，以及完整的稽核日誌與分析儀表板。
 
-目前版本：**v2.10.0**（詳見 [CHANGELOG.md](./CHANGELOG.md)）。
+目前版本：**v2.10.1**（詳見 [CHANGELOG.md](./CHANGELOG.md)）。
 
 ---
 
@@ -81,7 +81,7 @@ StoreOS_project/
 | 方法  | 路徑          | 功能                                                                                                              |
 | ----- | ------------- | ----------------------------------------------------------------------------------------------------------------- |
 | GET   | `/api/data`   | 一次取回 `staff`, `records`, `tiers`, `projTypes`, `shifts`, `insuranceBrackets`                                  |
-| POST  | `/api/save`   | body：`{ key, data }`，寫入單一 KV key。僅接受白名單 key（`staff`/`records`/`tiers`/`projTypes`/`shifts`/`insuranceBrackets`，其他回 400）並做基本型別檢查；寫入成功後自動寫一筆稽核 log（`API寫入:key`）（v2.9.0） |
+| POST  | `/api/save`   | body：`{ key, data, src? }`，寫入單一 KV key。僅接受白名單 key（`staff`/`records`/`tiers`/`projTypes`/`shifts`/`insuranceBrackets`，其他回 400）並做基本型別檢查。前端請求帶 `src:'app'`（其操作已由 `logAction` 記錄）→ 不重複寫稽核；未帶 `src`（繞過前端的直接寫入）→ 自動補記一筆稽核 log（`API寫入:key`）（v2.10.1 去重，v2.9.0 稽核） |
 | GET   | `/api/whoami` | 回傳 `{ email, debug }`，email 取自 `cf-access-authenticated-user-email`                                          |
 | GET   | `/api/logs`   | `?limit=N`（預設 300，最大 1000），回傳最新 N 筆稽核日誌                                                          |
 | POST  | `/api/logs`   | body：`{ action, detail?, user? }`，寫入一筆日誌（user 若缺則取 Access 信箱）                                     |

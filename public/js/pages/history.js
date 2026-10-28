@@ -104,13 +104,13 @@ function saveEditRecord(ts){
   r.totalBonus=Object.values(r.bonusData).reduce((s,v)=>s+v,0);
   const hasOverride=r.bonusOverride&&Object.keys(r.bonusOverride).length>0;
   logAction('編輯營業額紀錄',r.date+' '+r.store+' 營業額$'+fmt(r.sales)+' 員工:'+r.staff.map(rsName).join('、')+(hasOverride?' [含實習生例外:'+Object.entries(r.bonusOverride).map(([n,v])=>n+'$'+v).join(',')+ ']':''));
-  saveAll();renderHistory();showToast('✅ 紀錄已更新');
+  saveRecordsKey();renderHistory();showToast('✅ 紀錄已更新');
 }
 function deleteRecord(ts){
   const r=records.find(x=>x.ts===ts);
   if(!confirm('確定刪除？'))return;
   if(r)logAction('刪除營業額紀錄',r.date+' '+r.store+' 營業額$'+fmt(r.sales)+' 員工:'+r.staff.map(rsName).join('、'));
-  records=records.filter(r=>r.ts!==ts);saveAll();renderHistory();showToast('🗑 已刪除');
+  records=records.filter(r=>r.ts!==ts);saveRecordsKey();renderHistory();showToast('🗑 已刪除');
 }
 function printTable(title,headers,rows){
   const w=window.open('','_blank','width=900,height=700');

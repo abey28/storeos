@@ -11,11 +11,17 @@ export async function onRequestGet({ env }) {
     return Response.json({
       staff: staff || [],
       records: records || [],
-      tiers: tiers || [
-        { threshold: 5000, bonus: 200 },
-        { threshold: 10000, bonus: 500 },
-        { threshold: 14000, bonus: 700 },
-      ],
+      tiers: tiers || {
+        default: {
+          regular: [
+            { threshold: 5000, bonus: 200 },
+            { threshold: 10000, bonus: 500 },
+            { threshold: 14000, bonus: 700 },
+          ],
+          newbie: [],
+        },
+        stores: {},
+      },
       projTypes: projTypes || [],
       shifts: shifts || {
         台北車站: [{ name: '全天班', hours: 8, hourlyRate: 175 }],

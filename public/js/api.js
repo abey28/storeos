@@ -36,7 +36,7 @@ function saveKey(key,data){
   _saveQueue[key]=setTimeout(async()=>{
     delete _saveQueue[key];
     try{
-      const res=await fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,data})});
+      const res=await fetch(API+'/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,data,src:'app'})});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const now=new Date(),h=document.getElementById('last-save-hint');
       if(h)h.textContent='上次儲存：'+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
@@ -77,14 +77,22 @@ async function loadUserInfo(){
     if(b){b.textContent='離線';b.title='無法連線至 /api/whoami';}
   }
 }
+/* 自動同步：僅在分頁可見時輪詢（背景分頁不抓），間隔 60s；
+ * 切回分頁且距上次抓取 >55s 時立即補抓一次。大幅減少閒置時的 KV 讀取。 */
 function startAutoRefresh(){
-  setInterval(async()=>{
+  let last=0;
+  const poll=async()=>{
+    if(document.hidden)return;
+    if(Date.now()-last<55000)return;
     if(Object.keys(_saveQueue).length>0)return;
+    last=Date.now();
     try{const res=await fetch(API+'/data');if(!res.ok)return;const d=await res.json();
       staff=d.staff||staff;records=d.records||records;tiers=d.tiers?normalizeTiers(d.tiers):tiers;
       projTypes=d.projTypes||projTypes;shifts=d.shifts||shifts;setSyncOk();
     }catch(e){setSyncDot('');}
-  },30000);
+  };
+  setInterval(poll,60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
 }
 
 function sc(s){if(SC[s])return SC[s];const keys=Object.keys(SC);SC[s]=EXTRA_COLORS[keys.length%EXTRA_COLORS.length];return SC[s];}
